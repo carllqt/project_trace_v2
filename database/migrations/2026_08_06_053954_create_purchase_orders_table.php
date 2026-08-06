@@ -13,6 +13,15 @@ return new class extends Migration
     {
         Schema::create('purchase_orders', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('procurement_id')
+                ->unique()
+                ->constrained()
+                ->cascadeOnDelete();
+            $table->string('po_no')->nullable();
+            $table->date('po_date')->nullable();
+            $table->date('contract_date')->nullable();
+            $table->decimal('amount',15,2)->nullable();
+            $table->string('allotment_class')->nullable();
             $table->timestamps();
         });
     }

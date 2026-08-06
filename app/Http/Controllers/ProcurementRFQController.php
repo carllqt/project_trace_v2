@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ProcurementRFQS;
 use Illuminate\Http\Request;
 
-class ProcurementRFQSController extends Controller
+class ProcurementRFQController extends Controller
 {
     /**
      * Display a listing of the resource.

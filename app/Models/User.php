@@ -7,6 +7,8 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
@@ -45,5 +47,29 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function uploadedDocuments(): HasMany
+    {
+        return $this->hasMany(ProcurementDocument::class, 'uploaded_by');
+    }
+
+    public function forwardedRoutes(): HasMany
+    {
+        return $this->hasMany(ProcurementRoute::class, 'forwarded_by');
+    }
+
+    public function receivedRoutes(): HasMany
+    {
+        return $this->hasMany(ProcurementRoute::class, 'received_by');
+    }
+
+    public function activityLogs(): HasMany
+    {
+        return $this->hasMany(ActivityLog::class);
     }
 }

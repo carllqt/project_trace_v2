@@ -11,9 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('c_a_p_a_s', function (Blueprint $table) {
+        Schema::create('capas', function (Blueprint $table) {
+
             $table->id();
+
+            $table->foreignId('procurement_id')
+                ->unique()
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->date('calendar_of_activities')->nullable();
+
             $table->timestamps();
+
         });
     }
 

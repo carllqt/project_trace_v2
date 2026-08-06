@@ -12,8 +12,24 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('activity_logs', function (Blueprint $table) {
+
             $table->id();
+
+            $table->foreignId('procurement_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->foreignId('user_id')
+                ->nullable()
+                ->constrained()
+                ->nullOnDelete();
+
+            $table->string('activity');
+
+            $table->text('description')->nullable();
+
             $table->timestamps();
+
         });
     }
 

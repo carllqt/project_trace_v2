@@ -2,13 +2,13 @@
 
 namespace Database\Factories;
 
-use App\Models\ProcurementRFQS;
+use App\Models\ProcurementRFQ;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<ProcurementRFQS>
+ * @extends Factory<ProcurementRFQ>
  */
-class ProcurementRFQSFactory extends Factory
+class ProcurementRFQFactory extends Factory
 {
     /**
      * Define the model's default state.

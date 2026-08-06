@@ -12,8 +12,24 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('payments', function (Blueprint $table) {
+
             $table->id();
+
+            $table->foreignId('procurement_id')
+                ->unique()
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->string('ors_no')->nullable();
+
+            $table->date('ors_date')->nullable();
+
+            $table->date('date_prepared')->nullable();
+
+            $table->date('date_crediting')->nullable();
+
             $table->timestamps();
+
         });
     }
 

@@ -12,8 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('implementations', function (Blueprint $table) {
+
             $table->id();
+
+            $table->foreignId('procurement_id')
+                ->unique()
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->date('implementation_date')->nullable();
+
             $table->timestamps();
+
         });
     }
 

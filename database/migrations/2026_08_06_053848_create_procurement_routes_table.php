@@ -13,6 +13,35 @@ return new class extends Migration
     {
         Schema::create('procurement_routes', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('procurement_id')
+                ->constrained()
+                ->cascadeOnDelete();
+            $table->foreignId('from_department_id')
+                ->nullable()
+                ->constrained('departments')
+                ->nullOnDelete();
+            $table->foreignId('to_department_id')
+                ->constrained('departments');
+            $table->foreignId('forwarded_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+            $table->foreignId('received_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+            $table->string('stage');
+            $table->enum('action',[
+                'Forwarded',
+                'Received',
+                'Approved',
+                'Returned',
+                'Rejected',
+                'Completed'
+            ]);
+            $table->text('remarks')->nullable();
+            $table->timestamp('forwarded_at')->nullable();
+            $table->timestamp('received_at')->nullable();
             $table->timestamps();
         });
     }

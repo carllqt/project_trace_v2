@@ -11,8 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('procurement_p_r_s', function (Blueprint $table) {
+        Schema::create('procurement_prs', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('procurement_id')
+                ->unique()
+                ->constrained()
+                ->cascadeOnDelete();
+            $table->date('prepared_date')->nullable();
             $table->timestamps();
         });
     }

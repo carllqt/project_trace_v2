@@ -12,8 +12,34 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('procurement_documents', function (Blueprint $table) {
+
             $table->id();
+
+            $table->foreignId('procurement_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->string('stage');
+
+            $table->string('document_type');
+
+            $table->string('original_name');
+
+            $table->string('stored_name');
+
+            $table->string('file_path');
+
+            $table->string('mime_type')->nullable();
+
+            $table->unsignedBigInteger('file_size')->nullable();
+
+            $table->foreignId('uploaded_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
             $table->timestamps();
+
         });
     }
 

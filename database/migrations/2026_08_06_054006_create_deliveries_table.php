@@ -13,6 +13,22 @@ return new class extends Migration
     {
         Schema::create('deliveries', function (Blueprint $table) {
             $table->id();
+
+            $table->foreignId('procurement_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->string('iar_no')->nullable();
+
+            $table->date('delivery_date')->nullable();
+
+            $table->date('inspection_date')->nullable();
+
+            $table->enum('delivery_status',[
+                'Partial',
+                'Complete'
+            ])->default('Partial');
+
             $table->timestamps();
         });
     }
