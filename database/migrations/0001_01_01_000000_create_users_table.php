@@ -19,6 +19,9 @@ return new class extends Migration
             ->constrained()
             ->nullOnDelete();
             $table->string('email')->unique();
+            $table->string('role')->default('user');
+            $table->string('position')->nullable();
+            $table->boolean('is_head')->default(false);
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();
