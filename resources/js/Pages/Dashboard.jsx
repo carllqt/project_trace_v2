@@ -1,6 +1,6 @@
 import BreadCrumbsHeader from "@/Components/BreadcrumbsHeader";
 import MainLayout from "@/Layouts/MainLayout";
-import { Head, useForm } from "@inertiajs/react";
+import { Head, useForm, usePage } from "@inertiajs/react";
 import {
     CheckCircle2Icon,
     Clock3Icon,
@@ -13,7 +13,8 @@ import { useState, useEffect } from "react";
 import SidebarModal from "@/components/SidebarModal";
 import CreatePRModal from "@/Components/CreatePRModal";
 
-export default function Dashboard() {
+export default function Dashboard({ departments }) {
+    const { auth } = usePage().props;
     const breadcrumbs = [{ label: "Dashboard", showOnMobile: true }];
     const summaryCards = [
         {
@@ -45,31 +46,28 @@ export default function Dashboard() {
             iconClassName: "border-emerald-200 bg-emerald-50 text-emerald-600",
         },
     ];
+    const user = auth?.user;
+    const department = user?.department;
 
     const [showCreateModal, setShowCreateModal] = useState(false);
 
     const { data, setData, post, processing, errors, reset } = useForm({
+        pr_number: "",
         project_title: "",
-        end_user: "",
+        end_user: user?.department_id ?? "",
         abc: "",
         mode_of_procurement: "Small Value Procurement (Sec. 53.9)",
         purpose: "",
         documents: [],
     });
-
     const handleCreatePR = (e) => {
         e.preventDefault();
 
         console.log("Form Data:", data);
 
-        // post(route("purchase-requests.store"), {
-        //     forceFormData: true,
-
-        //     onSuccess: () => {
-        //         setShowCreateModal(false);
-        //         reset();
-        //     },
-        // });
+        post(route("procurement.store"), {
+            forceFormData: true,
+        });
     };
 
     return (
@@ -144,6 +142,7 @@ export default function Dashboard() {
                         })}
                     </div>
                     <CreatePRModal
+                        departments={departments}
                         isOpen={showCreateModal}
                         onClose={() => setShowCreateModal(false)}
                         onSubmit={handleCreatePR}

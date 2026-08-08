@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ProcurementController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -25,10 +27,9 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware(['auth', 'role:user'])->group(function () {
-    Route::get('/user', function () {
-        return Inertia::render('Dashboard');
-    })->name('dashboard');
+    Route::get('user/dashboard', [DashboardController::class, 'user_dashboard'])->name('dashboard');
 
+    Route::resource('procurement', ProcurementController::class);
     // Add more user routes here
 });
 

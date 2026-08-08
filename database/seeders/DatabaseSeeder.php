@@ -28,6 +28,8 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => '123@example.com',
             'password' => bcrypt('123'),
+            'department_id' => 5, // Assign a department ID
+
         ]);
         $user->assignRole('user');
 
