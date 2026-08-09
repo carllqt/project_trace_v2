@@ -1,9 +1,9 @@
 import React from "react";
 import { X, FilePlus, Paperclip, ClipboardList } from "lucide-react";
-import InputField from "./InputField";
-import FileUploadField from "./FileUploadField";
-import SelectField from "./SelectField";
-import InputError from "./InputError";
+import InputField from "../../Components/InputField";
+import FileUploadField from "../../Components/FileUploadField";
+import SelectField from "../../Components/SelectField";
+import InputError from "../../Components/InputError";
 
 export default function CreatePRModal({
     departments,

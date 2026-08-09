@@ -10,14 +10,17 @@ class ProcurementPR extends Model
 {
     /** @use HasFactory<\Database\Factories\ProcurementPRFactory> */
     use HasFactory;
+    protected $table = 'procurement_prs';
     protected $fillable = [
         'procurement_id',
         'prepared_date',
     ];
-
     public function procurement(): BelongsTo
     {
-        return $this->belongsTo(Procurement::class);
+        return $this->belongsTo(
+            Procurement::class,
+            'procurement_id'
+        );
     }
 
 }

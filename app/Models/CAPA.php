@@ -8,8 +8,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CAPA extends Model
 {
-    /** @use HasFactory<\Database\Factories\CAPAFactory> */
     use HasFactory;
+
+    protected $table = 'capas';
+
     protected $fillable = [
         'procurement_id',
         'calendar_of_activities',

@@ -10,7 +10,9 @@ class ProcurementRFQ extends Model
 {
     /** @use HasFactory<\Database\Factories\ProcurementRFQFactory> */
     use HasFactory;
-        protected $fillable = [
+    protected $table = 'procurement_rfqs';
+
+    protected $fillable = [
         'procurement_id',
         'tin',
         'winner_bidder',
@@ -21,6 +23,9 @@ class ProcurementRFQ extends Model
 
     public function procurement(): BelongsTo
     {
-        return $this->belongsTo(Procurement::class);
+        return $this->belongsTo(
+            Procurement::class,
+            'procurement_id'
+        );
     }
 }

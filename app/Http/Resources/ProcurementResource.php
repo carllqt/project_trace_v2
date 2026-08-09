@@ -1,236 +1,57 @@
 <?php
+namespace App\Http\Resources;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
 
-namespace App\Models;
-
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-
-class Procurement extends Model
+class ProcurementResource extends JsonResource
 {
-    /** @use HasFactory<\Database\Factories\ProcurementFactory> */
-    use HasFactory;
-
-    public const STAGE_1 = 'stage_1';
-    public const STAGE_2 = 'stage_2';
-    public const STAGE_3 = 'stage_3';
-    public const STAGE_4 = 'stage_4';
-    public const STAGE_5 = 'stage_5';
-    public const STAGE_6 = 'stage_6';
-    public const STAGE_7 = 'stage_7';
-
-    public const STAGES = [
-        self::STAGE_1 => 'Preparation of Purchase Request',
-        self::STAGE_2 => 'Preparation of Request for Quotation',
-        self::STAGE_3 => 'Preparation of Purchase Order',
-        self::STAGE_4 => 'Delivery of Goods and Services',
-        self::STAGE_5 => 'Project Implementation',
-        self::STAGE_6 => 'Payment Processing',
-        self::STAGE_7 => 'Completed',
-    ];
-
-    protected $fillable = [
-        'pr_no',
-        'project_title',
-        'purpose',
-        'end_user',
-        'abc',
-        'mode_of_procurement',
-        'status',
-        'current_department_id',
-    ];
-
-    public function department(): BelongsTo
+    public function toArray(Request $request): array
     {
-        return $this->belongsTo(Department::class, 'current_department_id');
-    }
-    public function currentDepartment()
-    {
-        return $this->belongsTo(Department::class, 'current_department_id');
-    }
-
-    public function pr(): HasOne
-    {
-        return $this->hasOne(ProcurementPR::class);
-    }
-
-    public function rfq(): HasOne
-    {
-        return $this->hasOne(ProcurementRFQ::class);
-    }
-
-    public function purchaseOrder(): HasOne
-    {
-        return $this->hasOne(PurchaseOrder::class);
-    }
-
-    public function delivery(): HasOne
-    {
-        return $this->hasOne(Delivery::class);
-    }
-    public function deliveries(): HasMany
-    {
-        return $this->hasMany(Delivery::class, 'procurement_id');
-    }
-    public function implementation(): HasOne
-    {
-        return $this->hasOne(Implementation::class);
-    }
-
-    public function payment(): HasOne
-    {
-        return $this->hasOne(Payment::class);
-    }
-
-    public function capa(): HasOne
-    {
-        return $this->hasOne(CAPA::class);
-    }
-
-    public function documents(): HasMany
-    {
-        return $this->hasMany(ProcurementDocument::class);
-    }
-
-    public function routes()
-    {
-        return $this->hasMany(ProcurementRoute::class);
-    }
-
-    public function latestRoute()
-    {
-        return $this->hasOne(ProcurementRoute::class)
-            ->latestOfMany();
-    }
-
-    public function activityLogs(): HasMany
-    {
-        return $this->hasMany(ActivityLog::class);
-    }
-    public function getStageNumberAttribute(): int
-    {
-        return match ($this->status) {
-            self::STAGE_1 => 1,
-            self::STAGE_2 => 2,
-            self::STAGE_3 => 3,
-            self::STAGE_4 => 4,
-            self::STAGE_5 => 5,
-            self::STAGE_6 => 6,
-            self::STAGE_7 => 7,
-            default => 0,
-        };
-    }
-
-    public function getStageLabelAttribute(): string
-    {
-        return self::STAGES[$this->status] ?? 'Unknown Stage';
-    }
-
-    public function getIsCompletedAttribute(): bool
-    {
-        return $this->status === self::STAGE_7;
-    }
-
-    public function getIsInProgressAttribute(): bool
-    {
-        return $this->status !== self::STAGE_7;
-    }
-
-    public function getWorkflowData(?User $user = null): array
-    {
+        $stageNumber = $this->getStageNumber();
         /*
         |--------------------------------------------------------------------------
-        | Stage
+        | Latest Route
         |--------------------------------------------------------------------------
         */
-        $stageNumber = (int) str_replace(
-            'stage_',
-            '',
-            $this->status
-        );
+        $latestRoute = $this->routes
+            ->sortByDesc('created_at')
+            ->first();
         /*
         |--------------------------------------------------------------------------
-        | Routes
+        | Latest Delivery
         |--------------------------------------------------------------------------
         */
-        $routes = $this->routes()
-            ->with([
-                'fromDepartment',
-                'toDepartment',
-                'forwardedBy',
-                'receivedBy',
-            ])
-            ->latest()
-            ->get();
-        $latestRoute = $routes->first();
+        $latestDelivery = $this->deliveries
+            ->sortByDesc('delivery_date')
+            ->first();
         /*
         |--------------------------------------------------------------------------
-        | Related Data
+        | Stage 5 Documents
         |--------------------------------------------------------------------------
         */
-        $pr = $this->pr;
-        $rfq = $this->rfq;
-        $purchaseOrder = $this->purchaseOrder;
-        $deliveries = $this->deliveries()
-            ->latest('delivery_date')
-            ->get();
-        $latestDelivery = $deliveries->first();
-        $implementation = $this->implementation;
-        $capa = $this->capa;
-        /*
-        |--------------------------------------------------------------------------
-        | Activity Logs
-        |--------------------------------------------------------------------------
-        */
-        $activityLogs = $this->activityLogs()
-            ->with('user')
-            ->latest()
-            ->get();
-        /*
-        |--------------------------------------------------------------------------
-        | Documents
-        |--------------------------------------------------------------------------
-        */
-        $documents = $this->documents()
-            ->latest()
-            ->get();
+        $attendanceSheet = $this->documents
+            ->where('stage', 'stage_5')
+            ->where('document_type', 'attendance_sheet')
+            ->first();
+        $terminalReport = $this->documents
+            ->where('stage', 'stage_5')
+            ->where('document_type', 'terminal_report')
+            ->first();
         /*
         |--------------------------------------------------------------------------
         | Status
         |--------------------------------------------------------------------------
         */
-        $isCompleted = $stageNumber >= 7;
-        $status = $isCompleted
-            ? 'completed'
-            : 'in_progress';
+        $isCompleted = $this->isCompleted();
         /*
         |--------------------------------------------------------------------------
-        | Requires My Action
-        |--------------------------------------------------------------------------
-        */
-        $requiresMyAction = false;
-        if ($user && $latestRoute) {
-            $requiresMyAction =
-                $latestRoute->to_department_id === $user->department_id
-                && $latestRoute->action === 'Forwarded';
-        }
-        /*
-        |--------------------------------------------------------------------------
-        | Route Status
-        |--------------------------------------------------------------------------
-        */
-        $routeStatus = $this->getRouteStatus($latestRoute);
-        /*
-        |--------------------------------------------------------------------------
-        | Return Data
+        | Return
         |--------------------------------------------------------------------------
         */
         return [
             /*
             |--------------------------------------------------------------------------
-            | Basic Information
+            | Basic Procurement
             |--------------------------------------------------------------------------
             */
             'id' =>
@@ -247,12 +68,19 @@ class Procurement extends Model
                 $this->abc,
             'mode_of_procurement' =>
                 $this->mode_of_procurement,
+            /*
+            |--------------------------------------------------------------------------
+            | Workflow Status
+            |--------------------------------------------------------------------------
+            */
             'stage' =>
                 $stageNumber,
             'status' =>
-                $status,
+                $isCompleted
+                    ? 'completed'
+                    : 'in_progress',
             'route_status' =>
-                $routeStatus,
+                $this->getRouteStatus($latestRoute),
             'current_department' =>
                 $this->department?->name,
             'current_department_id' =>
@@ -262,7 +90,38 @@ class Procurement extends Model
             'is_completed' =>
                 $isCompleted,
             'requires_my_action' =>
-                $requiresMyAction,
+                false,
+            /*
+            |--------------------------------------------------------------------------
+            | Current Route
+            |--------------------------------------------------------------------------
+            */
+            'route' => $latestRoute ? [
+                'id' =>
+                    $latestRoute->id,
+                'from_department_id' =>
+                    $latestRoute->from_department_id,
+                'from_dept' =>
+                    $latestRoute->fromDepartment?->name,
+                'to_department_id' =>
+                    $latestRoute->to_department_id,
+                'to_dept' =>
+                    $latestRoute->toDepartment?->name,
+                'stage' =>
+                    $latestRoute->stage,
+                'action' =>
+                    $latestRoute->action,
+                'remarks' =>
+                    $latestRoute->remarks,
+                'forwarded_at' =>
+                    $latestRoute->forwarded_at,
+                'received_at' =>
+                    $latestRoute->received_at,
+                'forwarded_by' =>
+                    $latestRoute->forwardedBy?->name,
+                'received_by' =>
+                    $latestRoute->receivedBy?->name,
+            ] : null,
             /*
             |--------------------------------------------------------------------------
             | Stage Data
@@ -295,15 +154,15 @@ class Procurement extends Model
                 */
                 'rfq' => [
                     'tin' =>
-                        $rfq?->tin,
+                        $this->rfq?->tin,
                     'winner_bidder' =>
-                        $rfq?->winner_bidder,
+                        $this->rfq?->winner_bidder,
                     'address_contract' =>
-                        $rfq?->address,
+                        $this->rfq?->address,
                     'contact_no' =>
-                        $rfq?->contact_no,
+                        $this->rfq?->contact_no,
                     'contract_amount' =>
-                        $rfq?->contract_amount,
+                        $this->rfq?->contract_amount,
                 ],
                 /*
                 |--------------------------------------------------------------------------
@@ -312,15 +171,15 @@ class Procurement extends Model
                 */
                 'po' => [
                     'po_no' =>
-                        $purchaseOrder?->po_no,
+                        $this->purchaseOrder?->po_no,
                     'po_date' =>
-                        $purchaseOrder?->po_date,
+                        $this->purchaseOrder?->po_date,
                     'contract_date' =>
-                        $purchaseOrder?->contract_date,
+                        $this->purchaseOrder?->contract_date,
                     'amount' =>
-                        $purchaseOrder?->amount,
+                        $this->purchaseOrder?->amount,
                     'allotment_class' =>
-                        $purchaseOrder?->allotment_class,
+                        $this->purchaseOrder?->allotment_class,
                 ],
                 /*
                 |--------------------------------------------------------------------------
@@ -344,28 +203,19 @@ class Procurement extends Model
                 */
                 'implementation' => [
                     'implementation_date' =>
-                        $implementation?->implementation_date,
+                        $this->implementation?->implementation_date,
                     'attendance_sheet_name' =>
-                        $documents
-                            ->where('stage', 'stage_5')
-                            ->where(
-                                'document_type',
-                                'attendance_sheet'
-                            )
-                            ->first()?->original_name,
+                        $attendanceSheet?->original_name,
                     'terminal_report_name' =>
-                        $documents
-                            ->where('stage', 'stage_5')
-                            ->where(
-                                'document_type',
-                                'terminal_report'
-                            )
-                            ->first()?->original_name,
+                        $terminalReport?->original_name,
                 ],
                 /*
                 |--------------------------------------------------------------------------
                 | Payment
                 |--------------------------------------------------------------------------
+                |
+                | These fields don't currently exist in your database.
+                |
                 */
                 'payment' => [
                     'ors_no' =>
@@ -384,7 +234,7 @@ class Procurement extends Model
                 */
                 'capa' => [
                     'calendar_of_activities' =>
-                        $capa?->calendar_of_activities,
+                        $this->capa?->calendar_of_activities,
                 ],
             ],
             /*
@@ -392,7 +242,9 @@ class Procurement extends Model
             | Routing History
             |--------------------------------------------------------------------------
             */
-            'routes' => $routes
+            'routes' => $this->routes
+                ->sortByDesc('created_at')
+                ->values()
                 ->map(function ($route) {
                     return [
                         'id' =>
@@ -413,14 +265,15 @@ class Procurement extends Model
                             $route->remarks,
                     ];
                 })
-                ->values()
                 ->toArray(),
             /*
             |--------------------------------------------------------------------------
             | Activity Logs
             |--------------------------------------------------------------------------
             */
-            'activity_logs' => $activityLogs
+            'activity_logs' => $this->activityLogs
+                ->sortByDesc('created_at')
+                ->values()
                 ->map(function ($log) {
                     return [
                         'id' =>
@@ -435,14 +288,15 @@ class Procurement extends Model
                             $log->created_at,
                     ];
                 })
-                ->values()
                 ->toArray(),
             /*
             |--------------------------------------------------------------------------
             | Documents
             |--------------------------------------------------------------------------
             */
-            'documents' => $documents
+            'documents' => $this->documents
+                ->sortByDesc('created_at')
+                ->values()
                 ->map(function ($document) {
                     return [
                         'id' =>
@@ -465,63 +319,83 @@ class Procurement extends Model
                             $document->file_path,
                     ];
                 })
-                ->values()
                 ->toArray(),
         ];
     }
+    /*
+    |--------------------------------------------------------------------------
+    | Stage Number
+    |--------------------------------------------------------------------------
+    */
+    private function getStageNumber(): int
+    {
+        return (int) str_replace(
+            'stage_',
+            '',
+            $this->status
+        );
+    }
+    /*
+    |--------------------------------------------------------------------------
+    | Completed
+    |--------------------------------------------------------------------------
+    */
+    private function isCompleted(): bool
+    {
+        return $this->status === 'stage_7';
+    }
+    /*
+    |--------------------------------------------------------------------------
+    | Route Status
+    |--------------------------------------------------------------------------
+    */
     private function getRouteStatus($route): ?string
     {
         if (! $route) {
             return null;
         }
         return match ($route->action) {
-            'Forwarded' => 'in_route',
-            'Received' => 'received',
-            'Approved' => 'approved',
-            'Returned' => 'returned',
-            'Rejected' => 'rejected',
-            'Completed' => 'completed',
-            default => null,
+            'Forwarded' =>
+                'in_route',
+            'Received' =>
+                'received',
+            'Approved' =>
+                'approved',
+            'Returned' =>
+                'returned',
+            'Rejected' =>
+                'rejected',
+            'Completed' =>
+                'completed',
+            default =>
+                null,
         };
     }
-    private function getDocument(
-        string $stage,
-        string $documentType
-    ): ?array {
-        $document = $this->documents()
-            ->where('stage', $stage)
-            ->where('document_type', $documentType)
-            ->latest()
-            ->first();
-        if (! $document) {
-            return null;
-        }
-        return [
-            'id' => $document->id,
-            'original_name' => $document->original_name,
-            'stored_name' => $document->stored_name,
-            'file_path' => $document->file_path,
-            'mime_type' => $document->mime_type,
-            'file_size' => $document->file_size,
-        ];
-    }
+    /*
+    |--------------------------------------------------------------------------
+    | File Size
+    |--------------------------------------------------------------------------
+    */
     private function formatFileSize(?int $bytes): ?string
     {
-        if (!$bytes) {
+        if ($bytes === null) {
             return null;
         }
-        if ($bytes >= 1024 * 1024) {
+        if ($bytes < 1024) {
+            return $bytes . ' B';
+        }
+        if ($bytes < 1024 * 1024) {
+            return round($bytes / 1024, 1) . ' KB';
+        }
+        if ($bytes < 1024 * 1024 * 1024) {
             return round(
                 $bytes / (1024 * 1024),
                 1
             ) . ' MB';
         }
-        if ($bytes >= 1024) {
-            return round(
-                $bytes / 1024,
-                1
-            ) . ' KB';
-        }
-        return $bytes . ' B';
+        return round(
+            $bytes / (1024 * 1024 * 1024),
+            1
+        ) . ' GB';
     }
 }

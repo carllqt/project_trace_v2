@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreProcurementRequest;
+use App\Models\Department;
 use App\Models\Procurement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -39,11 +40,13 @@ class ProcurementController extends Controller
         try {
             DB::transaction(function () use ($request, &$storedFiles) {
 
+                $enduser = Department::findOrFail($request->end_user)->name;
+
                 $procurement = Procurement::create([
                     'pr_no' => $request->pr_no,
                     'project_title' => $request->project_title,
                     'purpose' => $request->purpose,
-                    'end_user' => $request->end_user,
+                    'end_user' => $enduser,
                     'abc' => $request->abc,
                     'mode_of_procurement' => $request->mode_of_procurement,
                     'status' => Procurement::STAGE_1,
@@ -101,7 +104,18 @@ class ProcurementController extends Controller
      */
     public function show(Procurement $procurement)
     {
-        //
+        $procurement->load([
+            'department',
+            'purchaseOrder',
+            'implementation',
+            'capa',
+        ]);
+
+        return response()->json(
+            $procurement->getWorkflowData(
+                auth()->user()
+            )
+        );
     }
 
     /**

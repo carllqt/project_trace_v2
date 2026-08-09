@@ -8,17 +8,46 @@ import {
     UserCheck,
     Wallet,
 } from "lucide-react";
-
 import { PROCUREMENT_STAGES } from "@/constants";
-import DynamicTable from "./DynamicTable";
-import FilterToggle from "./FilterButtons/FillterToggle";
+import DynamicTable from "../../Components/DynamicTable";
+import FilterToggle from "../../Components/FilterButtons/FillterToggle";
+import StatusBadge from "@/Pages/Partials/StatusBadge";
+import axios from "axios";
+import { useState } from "react";
+import ProcurementDrawerModal from "./ProcurementDrawerModal";
 
 export default function ProcurementRegistry({
     procurements = [],
     queryParams,
     departments,
+    user,
 }) {
     queryParams = queryParams || {};
+    // modal
+    const [selectedProcurement, setSelectedProcurement] = useState(null);
+    const [isProcurementModalOpen, setIsProcurementModalOpen] = useState(false);
+    const [isLoadingProcurement, setIsLoadingProcurement] = useState(false);
+    const handleViewProcurement = async (procurementId) => {
+        try {
+            setIsLoadingProcurement(true);
+
+            const response = await axios.get(
+                route("procurement.show", procurementId),
+            );
+
+            setSelectedProcurement(response.data);
+            setIsProcurementModalOpen(true);
+        } catch (error) {
+            console.error("Failed to fetch procurement:", error);
+        } finally {
+            setIsLoadingProcurement(false);
+        }
+    };
+
+    const handleClose = () => {
+        setSelectedProcurement(null);
+    };
+    // data table
     const allColumns = [
         {
             key: "procurement",
@@ -200,7 +229,7 @@ export default function ProcurementRegistry({
         actions: (procurement) => (
             <button
                 type="button"
-                onClick={() => setSelectedProcurement(procurement)}
+                onClick={() => handleViewProcurement(procurement.id)}
                 title="View procurement"
                 className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-blue-50 hover:text-blue-600"
             >
@@ -208,6 +237,7 @@ export default function ProcurementRegistry({
             </button>
         ),
     };
+
     return (
         <div className="space-y-4">
             {/* Filter Toolbar */}
@@ -237,19 +267,16 @@ export default function ProcurementRegistry({
                     }
                 />
             </div>
+
+            <ProcurementDrawerModal
+                isOpen={selectedProcurement}
+                onClose={() => handleClose(false)}
+                currentRole={{
+                    dept: user.department?.name,
+                    name: user.name,
+                }}
+                initialData={selectedProcurement}
+            />
         </div>
-    );
-}
-function StatusBadge({ completed }) {
-    return (
-        <span
-            className={`inline-flex rounded-md px-2 py-1 text-[10px] font-semibold ${
-                completed
-                    ? "bg-emerald-50 text-emerald-700"
-                    : "bg-blue-50 text-blue-700"
-            }`}
-        >
-            {completed ? "Completed" : "In Progress"}
-        </span>
     );
 }

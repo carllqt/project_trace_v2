@@ -11,10 +11,10 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import SidebarModal from "@/components/SidebarModal";
-import CreatePRModal from "@/Components/CreatePRModal";
+import CreatePRModal from "@/Pages/Partials/CreatePRModal";
 import { toast } from "sonner";
 import ProcurementDashboardHeader from "@/Components/Header";
-import ProcurementRegistry from "@/Components/ProcurementRegistry";
+import ProcurementRegistry from "@/Pages/Partials/ProcurementRegistry";
 
 export default function Dashboard({
     departments,
@@ -24,36 +24,6 @@ export default function Dashboard({
 }) {
     const { auth, flash } = usePage().props;
     const breadcrumbs = [{ label: "Dashboard", showOnMobile: true }];
-    const summaryCards = [
-        {
-            label: "Total PRs Registered",
-            value: "3",
-            note: "Across all stages",
-            icon: FileTextIcon,
-            iconClassName: "border-blue-200 bg-blue-50 text-blue-600",
-        },
-        {
-            label: "Action Required (My Queue)",
-            value: "0",
-            note: "Assigned to IT / HR Dept",
-            icon: Clock3Icon,
-            iconClassName: "border-orange-200 bg-orange-50 text-orange-500",
-        },
-        {
-            label: "In Progress Routing",
-            value: "2",
-            note: "Stages 1 - 5 active",
-            icon: TrendingUpIcon,
-            iconClassName: "border-purple-200 bg-purple-50 text-purple-600",
-        },
-        {
-            label: "Completed & Paid",
-            value: "1",
-            note: "Finalized in Stage 6",
-            icon: CheckCircle2Icon,
-            iconClassName: "border-emerald-200 bg-emerald-50 text-emerald-600",
-        },
-    ];
     const user = auth?.user;
     const [showCreateModal, setShowCreateModal] = useState(false);
 
@@ -107,6 +77,7 @@ export default function Dashboard({
 
             <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-7">
                 <div className="w-full space-y-6">
+                    {/* <pre>{JSON.stringify(procurements, undefined, 2)}</pre> */}
                     <ProcurementDashboardHeader
                         stats={stats}
                         onCreate={() => setShowCreateModal(true)}
@@ -116,6 +87,7 @@ export default function Dashboard({
                         queryParams={queryParams}
                         procurements={procurements}
                         departments={departments}
+                        user={user}
                     />
                     <CreatePRModal
                         departments={departments}
