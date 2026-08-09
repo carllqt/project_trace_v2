@@ -20,6 +20,7 @@ import {
     PlusIcon,
     TrendingUpIcon,
 } from "lucide-react";
+import { Toaster } from "sonner";
 
 const summaryCards = [
     {
@@ -55,6 +56,7 @@ const summaryCards = [
 export default function MainLayout({ children }) {
     return (
         <SidebarProvider style={{ "--sidebar-width": "252px" }}>
+            <Toaster richColors />
             <AppSidebar />
             <SidebarInset className="bg-slate-50">
                 <main className="min-w-0 bg-gray-100">{children}</main>

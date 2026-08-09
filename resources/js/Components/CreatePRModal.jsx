@@ -3,6 +3,7 @@ import { X, FilePlus, Paperclip, ClipboardList } from "lucide-react";
 import InputField from "./InputField";
 import FileUploadField from "./FileUploadField";
 import SelectField from "./SelectField";
+import InputError from "./InputError";
 
 export default function CreatePRModal({
     departments,
@@ -103,59 +104,79 @@ export default function CreatePRModal({
                                     </p>
                                 </div>
                             </div>
-
                             <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
                                 {/* PR Number */}
-                                <InputField
-                                    label="PR Number"
-                                    name="pr_number"
-                                    placeholder="e.g. PR-2026-001"
-                                    value={data.pr_number}
-                                    onChange={(e) =>
-                                        setData("pr_number", e.target.value)
-                                    }
-                                    required
-                                />
+                                <div>
+                                    <InputField
+                                        label="PR Number"
+                                        name="pr_no"
+                                        placeholder="e.g. PR-2026-001"
+                                        value={data.pr_no}
+                                        onChange={(e) =>
+                                            setData("pr_no", e.target.value)
+                                        }
+                                        required
+                                    />
+
+                                    <InputError message={errors.pr_no} />
+                                </div>
 
                                 {/* Project Title */}
-                                <InputField
-                                    label="Project Title"
-                                    name="project_title"
-                                    placeholder="e.g. Server Maintenance Contract"
-                                    value={data.project_title}
-                                    onChange={(e) =>
-                                        setData("project_title", e.target.value)
-                                    }
-                                    required
-                                />
+                                <div>
+                                    <InputField
+                                        label="Project Title"
+                                        name="project_title"
+                                        placeholder="e.g. Server Maintenance Contract"
+                                        value={data.project_title}
+                                        onChange={(e) =>
+                                            setData(
+                                                "project_title",
+                                                e.target.value,
+                                            )
+                                        }
+                                        required
+                                    />
+
+                                    <InputError
+                                        message={errors.project_title}
+                                    />
+                                </div>
 
                                 {/* End User Department */}
-                                <SelectField
-                                    label="End User Department"
-                                    name="end_user"
-                                    value={data.end_user}
-                                    onChange={(e) =>
-                                        setData("end_user", e.target.value)
-                                    }
-                                    options={departmentOptions}
-                                    placeholder="Select department"
-                                    required
-                                />
+                                <div>
+                                    <SelectField
+                                        label="End User Department"
+                                        name="end_user"
+                                        value={data.end_user}
+                                        onChange={(e) =>
+                                            setData("end_user", e.target.value)
+                                        }
+                                        options={departmentOptions}
+                                        placeholder="Select department"
+                                        required
+                                    />
+
+                                    <InputError message={errors.end_user} />
+                                </div>
 
                                 {/* ABC */}
-                                <InputField
-                                    label="Approved Budget for Contract (ABC)"
-                                    name="abc"
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    placeholder="0.00"
-                                    value={data.abc}
-                                    onChange={(e) =>
-                                        setData("abc", e.target.value)
-                                    }
-                                    required
-                                />
+                                <div>
+                                    <InputField
+                                        label="Approved Budget for Contract (ABC)"
+                                        name="abc"
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="0.00"
+                                        value={data.abc}
+                                        onChange={(e) =>
+                                            setData("abc", e.target.value)
+                                        }
+                                        required
+                                    />
+
+                                    <InputError message={errors.abc} />
+                                </div>
                             </div>
                         </div>
 
@@ -176,37 +197,42 @@ export default function CreatePRModal({
                             </div>
 
                             <div className="space-y-4">
-                                <SelectField
-                                    label="Mode of Procurement"
-                                    name="mode_of_procurement"
-                                    value={data.mode_of_procurement}
-                                    onChange={(e) =>
-                                        setData(
-                                            "mode_of_procurement",
-                                            e.target.value,
-                                        )
-                                    }
-                                    options={procurementOptions}
-                                    placeholder="Select procurement mode"
-                                    required
-                                />
+                                {/* Mode of Procurement */}
+                                <div>
+                                    <SelectField
+                                        label="Mode of Procurement"
+                                        name="mode_of_procurement"
+                                        value={data.mode_of_procurement}
+                                        onChange={(e) =>
+                                            setData(
+                                                "mode_of_procurement",
+                                                e.target.value,
+                                            )
+                                        }
+                                        options={procurementOptions}
+                                        placeholder="Select procurement mode"
+                                        required
+                                    />
 
-                                <InputField
-                                    label="Purpose & Justification"
-                                    name="purpose"
-                                    placeholder="Describe the purpose and justification for this purchase request..."
-                                    value={data.purpose}
-                                    onChange={(e) =>
-                                        setData("purpose", e.target.value)
-                                    }
-                                    required
-                                />
+                                    <InputError
+                                        message={errors.mode_of_procurement}
+                                    />
+                                </div>
 
-                                {errors?.purpose && (
-                                    <p className="-mt-2 text-[10px] font-medium text-red-500">
-                                        {errors.purpose}
-                                    </p>
-                                )}
+                                {/* Purpose */}
+                                <div>
+                                    <InputField
+                                        label="Purpose & Justification"
+                                        name="purpose"
+                                        placeholder="Describe the purpose and justification for this purchase request..."
+                                        value={data.purpose}
+                                        onChange={(e) =>
+                                            setData("purpose", e.target.value)
+                                        }
+                                    />
+
+                                    <InputError message={errors.purpose} />
+                                </div>
                             </div>
                         </div>
 

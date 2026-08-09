@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Procurement;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -19,15 +20,7 @@ return new class extends Migration
             $table->string('end_user')->nullable();
             $table->decimal('abc',15,2)->nullable();
             $table->string('mode_of_procurement')->nullable();
-            $table->enum('status',[
-                'Preparation of PR',
-                'Preparation of RFQ',
-                'Preparation of PO',
-                'Delivery',
-                'Implementation',
-                'Payment',
-                'Completed'
-            ])->default('Preparation of PR');
+            $table->string('status')->default(Procurement::STAGE_1);
             $table->foreignId('current_department_id')
                 ->nullable()
                 ->constrained('departments')
