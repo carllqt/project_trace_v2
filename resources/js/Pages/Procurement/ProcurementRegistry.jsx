@@ -272,6 +272,7 @@ export default function ProcurementRegistry({
                 isOpen={selectedProcurement}
                 onClose={() => handleClose(false)}
                 currentRole={{
+                    deptId: user.department_id,
                     dept: user.department?.name,
                     name: user.name,
                 }}

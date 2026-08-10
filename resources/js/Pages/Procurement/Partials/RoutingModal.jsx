@@ -7,6 +7,7 @@ export default function RoutingModal({
     onClose,
     purchaseRequest,
     routingType,
+    currentRole,
     departments = [],
     defaultTargetDept = "",
     stageFiles = {},
@@ -14,6 +15,39 @@ export default function RoutingModal({
     onSuccess,
 }) {
     const isForward = routingType === "forward";
+
+    const userDepartment = (currentRole?.dept ?? "").trim();
+
+    const assignedDepartment = (
+        purchaseRequest?.current_department ?? ""
+    ).trim();
+
+    const canRoute =
+        userDepartment !== "" &&
+        assignedDepartment !== "" &&
+        userDepartment.toLowerCase() === assignedDepartment.toLowerCase();
+
+    const getPreviousDepartment = () => {
+        const routes = purchaseRequest?.routes ?? [];
+
+        // Find the latest route that sent the PR
+        // to the current department.
+        const previousRoute = [...routes].reverse().find((route) => {
+            const toDepartment = (route.to_dept ?? "").trim().toLowerCase();
+
+            return (
+                toDepartment === assignedDepartment.toLowerCase() &&
+                (route.from_dept ?? "").trim() !== ""
+            );
+        });
+
+        return previousRoute?.from_dept?.trim() ?? "";
+    };
+
+    const previousDepartment = getPreviousDepartment();
+
+    const returnTargetDepartment =
+        previousDepartment || defaultTargetDept || "";
 
     const {
         data,
@@ -45,10 +79,23 @@ export default function RoutingModal({
         clearErrors();
 
         setData({
-            target_department: defaultTargetDept ?? "",
+            target_department: isForward
+                ? (defaultTargetDept ?? "")
+                : returnTargetDepartment,
             remarks: "",
+            action: routingType,
+            current_stage: Number(purchaseRequest.stage),
+            stage_data: purchaseRequest.stage_data ?? {},
+            stage_files: [],
         });
-    }, [show, purchaseRequest?.id, routingType, defaultTargetDept]);
+    }, [
+        show,
+        purchaseRequest?.id,
+        purchaseRequest?.stage,
+        routingType,
+        defaultTargetDept,
+        previousDepartment,
+    ]);
 
     // ---------------------------------------------------------
     // CLOSE MODAL
@@ -72,11 +119,11 @@ export default function RoutingModal({
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        if (!purchaseRequest?.id) {
+        if (!purchaseRequest?.id || !canRoute) {
             return;
         }
 
-        const currentStage = Number(purchaseRequest.stage);
+        const currentStage = Number(purchaseRequest.stage) || 1;
 
         transform((formData) => ({
             ...formData,
@@ -96,14 +143,15 @@ export default function RoutingModal({
             }),
             {
                 preserveScroll: true,
+
                 forceFormData: true,
 
                 onSuccess: () => {
                     reset();
                     clearErrors();
+
                     setStageFiles?.({});
 
-                    // Close modal
                     onSuccess?.();
                 },
             },
@@ -181,7 +229,9 @@ export default function RoutingModal({
                     {/* TARGET DEPARTMENT */}
                     <div>
                         <label className="mb-1 block text-xs font-bold text-slate-700">
-                            Target Department Destination
+                            {isForward
+                                ? "Target Department Destination"
+                                : "Return To Previous Department"}
                         </label>
 
                         <select
@@ -189,33 +239,55 @@ export default function RoutingModal({
                             onChange={(e) =>
                                 setData("target_department", e.target.value)
                             }
-                            disabled={processing}
+                            /*
+                        |--------------------------------------------------
+                        | FORWARD = User may select destination.
+                        | RETURN = Locked to previous stage department.
+                        |--------------------------------------------------
+                        */
+                            disabled={processing || !isForward}
                             required
                             className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 disabled:cursor-not-allowed disabled:bg-slate-50"
                         >
-                            <option value="">Select department</option>
+                            {isForward ? (
+                                <>
+                                    <option value="">Select department</option>
 
-                            {departments.map((department, index) => {
-                                const value =
-                                    typeof department === "string"
-                                        ? department
-                                        : department.name;
+                                    {departments.map((department, index) => {
+                                        const value =
+                                            typeof department === "string"
+                                                ? department
+                                                : department.name;
 
-                                if (!value) {
-                                    return null;
-                                }
-
-                                return (
-                                    <option
-                                        key={
-                                            department.id ?? `${value}-${index}`
+                                        if (!value) {
+                                            return null;
                                         }
-                                        value={value}
-                                    >
-                                        {value}
-                                    </option>
-                                );
-                            })}
+
+                                        return (
+                                            <option
+                                                key={
+                                                    department.id ??
+                                                    `${value}-${index}`
+                                                }
+                                                value={value}
+                                            >
+                                                {value}
+                                            </option>
+                                        );
+                                    })}
+                                </>
+                            ) : (
+                                /*
+                            |------------------------------------------
+                            | IMPORTANT:
+                            | Show defaultTargetDept, NOT currentRole.dept
+                            |------------------------------------------
+                            */
+                                <option value={returnTargetDepartment}>
+                                    {returnTargetDepartment ||
+                                        "No previous department found"}
+                                </option>
+                            )}
                         </select>
 
                         {errors.target_department && (
@@ -277,6 +349,7 @@ export default function RoutingModal({
                             type="submit"
                             disabled={
                                 processing ||
+                                !canRoute ||
                                 !data.target_department ||
                                 !data.remarks.trim()
                             }

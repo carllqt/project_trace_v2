@@ -127,13 +127,9 @@ export default function ProcurementDrawerModal({
     initialData,
     currentRole,
 }) {
-    // IMPORTANT:
-    // Hooks must always run before any conditional return.
     const [currentPR, setCurrentPR] = useState(() => normalizePR(initialData));
 
     const [activeDrawerTab, setActiveDrawerTab] = useState("stage_form");
-
-    const [routingRemarks, setRoutingRemarks] = useState("");
 
     const [showRoutingModal, setShowRoutingModal] = useState(false);
 
@@ -142,7 +138,37 @@ export default function ProcurementDrawerModal({
     const [defaultTargetDept, setDefaultTargetDept] = useState("");
 
     const [targetDept, setTargetDept] = useState("");
+
     const [stageFiles, setStageFiles] = useState({});
+
+    // ---------------------------------------------------------
+    // ROLE / DEPARTMENT ACCESS
+    // ---------------------------------------------------------
+
+    const userDepartment = (currentRole?.dept ?? "").trim().toLowerCase();
+
+    const assignedDepartment = (currentPR?.current_department ?? "")
+        .trim()
+        .toLowerCase();
+
+    /**
+     * IMPORTANT ACCESS RULE:
+     *
+     * Only the department currently assigned to the PR
+     * can edit the stage form, upload documents,
+     * receive, forward, or return the PR.
+     */
+    const canAccessCurrentStage =
+        currentPR?.status !== "completed" &&
+        userDepartment !== "" &&
+        assignedDepartment !== "" &&
+        userDepartment === assignedDepartment;
+
+    const canEditStageForm = canAccessCurrentStage;
+
+    const canUploadDocuments = canAccessCurrentStage;
+
+    const canRoute = canAccessCurrentStage;
 
     // ---------------------------------------------------------
     // UPDATE WHEN INITIAL DATA CHANGES
@@ -168,15 +194,25 @@ export default function ProcurementDrawerModal({
     // ---------------------------------------------------------
 
     const handleStageDataChange = (prId, stageKey, field, value) => {
+        // Prevent unauthorized users from modifying data
+        if (!canEditStageForm) {
+            return;
+        }
+
         setCurrentPR((prev) => {
-            if (!prev) return prev;
+            if (!prev) {
+                return prev;
+            }
 
             return {
                 ...prev,
+
                 stage_data: {
                     ...(prev.stage_data ?? {}),
+
                     [stageKey]: {
                         ...(prev.stage_data?.[stageKey] ?? {}),
+
                         [field]: value,
                     },
                 },
@@ -189,7 +225,7 @@ export default function ProcurementDrawerModal({
     // ---------------------------------------------------------
 
     const handleReceivePR = (prId) => {
-        if (!currentPR) {
+        if (!currentPR || !canAccessCurrentStage) {
             return;
         }
 
@@ -212,7 +248,9 @@ export default function ProcurementDrawerModal({
 
                 routes[lastIndex] = {
                     ...routes[lastIndex],
+
                     received_by: roleName,
+
                     received_at: timestamp,
                 };
             }
@@ -227,9 +265,13 @@ export default function ProcurementDrawerModal({
                 activity_logs: [
                     {
                         id: Date.now(),
+
                         user: roleName,
+
                         action: "Acknowledged Document",
+
                         remarks: `Received document package at ${roleDept}`,
+
                         timestamp,
                     },
 
@@ -246,7 +288,7 @@ export default function ProcurementDrawerModal({
     const handleForwardPR = (e) => {
         e?.preventDefault();
 
-        if (!currentPR) {
+        if (!currentPR || !canAccessCurrentStage) {
             return;
         }
 
@@ -290,6 +332,7 @@ export default function ProcurementDrawerModal({
 
                 route_status: isFinalStage ? "completed" : "in_transit",
 
+                // THIS IS WHAT TRANSFERS ACCESS
                 current_department: destination,
 
                 routes: [
@@ -312,7 +355,7 @@ export default function ProcurementDrawerModal({
 
                         received_by: null,
 
-                        remarks: routingRemarks,
+                        remarks: "",
                     },
                 ],
 
@@ -326,8 +369,6 @@ export default function ProcurementDrawerModal({
                             ? "Completed Procurement"
                             : `Forwarded to ${destination}`,
 
-                        details: routingRemarks,
-
                         timestamp,
                     },
 
@@ -336,7 +377,6 @@ export default function ProcurementDrawerModal({
             };
         });
 
-        setRoutingRemarks("");
         setShowRoutingModal(false);
     };
 
@@ -347,7 +387,7 @@ export default function ProcurementDrawerModal({
     const handleReturnPR = (e) => {
         e?.preventDefault();
 
-        if (!currentPR) {
+        if (!currentPR || !canAccessCurrentStage) {
             return;
         }
 
@@ -359,6 +399,7 @@ export default function ProcurementDrawerModal({
 
         const previousStage = STAGES[currentStageIndex - 1];
 
+        // Cannot return before Stage 1
         if (!previousStage) {
             return;
         }
@@ -367,8 +408,14 @@ export default function ProcurementDrawerModal({
 
         const roleName = currentRole?.name ?? "Current User";
 
-        const destination =
-            targetDept || defaultTargetDept || previousStage.department || "";
+        // IMPORTANT:
+        // Always return to the PREVIOUS stage department.
+        // Do not use the current department as fallback.
+        const destination = previousStage.department ?? "";
+
+        if (!destination) {
+            return;
+        }
 
         setCurrentPR((prev) => {
             if (!prev) {
@@ -378,12 +425,14 @@ export default function ProcurementDrawerModal({
             return {
                 ...prev,
 
+                // Move back one stage
                 stage: Number(previousStage.id),
 
                 status: "in_progress",
 
                 route_status: "returned",
 
+                // Transfer ownership to previous office
                 current_department: destination,
 
                 routes: [
@@ -404,7 +453,7 @@ export default function ProcurementDrawerModal({
 
                         received_by: null,
 
-                        remarks: routingRemarks,
+                        remarks: `Returned to ${destination}`,
                     },
                 ],
 
@@ -414,9 +463,9 @@ export default function ProcurementDrawerModal({
 
                         user: roleName,
 
-                        action: `Returned Document to ${destination}`,
+                        action: `Returned to ${destination}`,
 
-                        details: routingRemarks,
+                        details: `Procurement returned from Stage ${currentStage} to Stage ${previousStage.id}`,
 
                         timestamp,
                     },
@@ -426,7 +475,8 @@ export default function ProcurementDrawerModal({
             };
         });
 
-        setRoutingRemarks("");
+        setDefaultTargetDept("");
+        setTargetDept("");
         setShowRoutingModal(false);
     };
 
@@ -435,7 +485,9 @@ export default function ProcurementDrawerModal({
     // ---------------------------------------------------------
 
     const handleForwardClick = () => {
-        if (!currentPR) return;
+        if (!currentPR || !canAccessCurrentStage) {
+            return;
+        }
 
         const currentStageIndex = STAGES.findIndex(
             (stage) => Number(stage.id) === Number(currentPR.stage),
@@ -448,7 +500,11 @@ export default function ProcurementDrawerModal({
         }
 
         setRoutingType("forward");
+
         setDefaultTargetDept(nextStage.department ?? "");
+
+        setTargetDept(nextStage.department ?? "");
+
         setShowRoutingModal(true);
     };
 
@@ -457,7 +513,9 @@ export default function ProcurementDrawerModal({
     // ---------------------------------------------------------
 
     const handleReturnClick = () => {
-        if (!currentPR) return;
+        if (!currentPR || !canAccessCurrentStage) {
+            return;
+        }
 
         const currentStageIndex = STAGES.findIndex(
             (stage) => Number(stage.id) === Number(currentPR.stage),
@@ -470,7 +528,13 @@ export default function ProcurementDrawerModal({
         }
 
         setRoutingType("return");
-        setDefaultTargetDept(previousStage.department ?? "");
+
+        // Select the PREVIOUS stage's department
+        const previousDepartment = previousStage.department ?? "";
+
+        setDefaultTargetDept(previousDepartment);
+        setTargetDept(previousDepartment);
+
         setShowRoutingModal(true);
     };
 
@@ -522,6 +586,9 @@ export default function ProcurementDrawerModal({
                             handleStageDataChange={handleStageDataChange}
                             stageFiles={stageFiles}
                             setStageFiles={setStageFiles}
+                            canEdit={canEditStageForm}
+                            canUpload={canUploadDocuments}
+                            canAccessCurrentStage={canAccessCurrentStage}
                         />
                     )}
 
@@ -532,7 +599,11 @@ export default function ProcurementDrawerModal({
 
                     {/* DOCUMENTS */}
                     {activeDrawerTab === "documents" && (
-                        <DocumentsTab currentPR={currentPR} />
+                        <DocumentsTab
+                            currentPR={currentPR}
+                            canUpload={canUploadDocuments}
+                            canAccessCurrentStage={canAccessCurrentStage}
+                        />
                     )}
                 </div>
 
@@ -542,6 +613,7 @@ export default function ProcurementDrawerModal({
                     stages={STAGES}
                     onReturn={handleReturnClick}
                     onForward={handleForwardClick}
+                    canRoute={canRoute}
                 />
             </div>
 
@@ -551,18 +623,18 @@ export default function ProcurementDrawerModal({
                 onClose={() => setShowRoutingModal(false)}
                 purchaseRequest={currentPR}
                 routingType={routingType}
+                currentRole={currentRole}
                 stageFiles={stageFiles}
                 departments={DEPARTMENTS}
                 setStageFiles={setStageFiles}
                 defaultTargetDept={defaultTargetDept}
+                onForward={handleForwardPR}
+                onReturn={handleReturnPR}
                 onSuccess={() => {
-                    // Close RoutingModal
                     setShowRoutingModal(false);
 
-                    // Close ProcurementDrawerModal
                     onClose?.();
 
-                    // Refresh the procurement list
                     router.reload({
                         preserveScroll: true,
                     });
