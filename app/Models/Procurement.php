@@ -1,18 +1,14 @@
 <?php
-
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-
 class Procurement extends Model
 {
     /** @use HasFactory<\Database\Factories\ProcurementFactory> */
     use HasFactory;
-
     public const STAGE_1 = 'stage_1';
     public const STAGE_2 = 'stage_2';
     public const STAGE_3 = 'stage_3';
@@ -20,7 +16,6 @@ class Procurement extends Model
     public const STAGE_5 = 'stage_5';
     public const STAGE_6 = 'stage_6';
     public const STAGE_7 = 'stage_7';
-
     public const STAGES = [
         self::STAGE_1 => 'Preparation of Purchase Request',
         self::STAGE_2 => 'Preparation of Request for Quotation',
@@ -43,7 +38,6 @@ class Procurement extends Model
             default => self::STAGE_1,
         };
     }
-
     protected $fillable = [
         'pr_no',
         'project_title',
@@ -55,7 +49,6 @@ class Procurement extends Model
         'status',
         'current_department_id',
     ];
-
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class, 'current_department_id');
@@ -64,22 +57,18 @@ class Procurement extends Model
     {
         return $this->belongsTo(Department::class, 'current_department_id');
     }
-
     public function pr(): HasOne
     {
         return $this->hasOne(ProcurementPR::class);
     }
-
     public function rfq(): HasOne
     {
         return $this->hasOne(ProcurementRFQ::class);
     }
-
     public function purchaseOrder(): HasOne
     {
         return $this->hasOne(PurchaseOrder::class);
     }
-
     public function delivery(): HasOne
     {
         return $this->hasOne(Delivery::class);
@@ -92,33 +81,27 @@ class Procurement extends Model
     {
         return $this->hasOne(Implementation::class);
     }
-
     public function payment(): HasOne
     {
         return $this->hasOne(Payment::class);
     }
-
     public function capa(): HasOne
     {
         return $this->hasOne(CAPA::class);
     }
-
     public function documents(): HasMany
     {
         return $this->hasMany(ProcurementDocument::class);
     }
-
     public function routes()
     {
         return $this->hasMany(ProcurementRoute::class);
     }
-
     public function latestRoute()
     {
         return $this->hasOne(ProcurementRoute::class)
             ->latestOfMany();
     }
-
     public function activityLogs(): HasMany
     {
         return $this->hasMany(ActivityLog::class);
@@ -136,22 +119,18 @@ class Procurement extends Model
             default => 0,
         };
     }
-
     public function getStageLabelAttribute(): string
     {
         return self::STAGES[$this->status] ?? 'Unknown Stage';
     }
-
     public function getIsCompletedAttribute(): bool
     {
         return $this->status === self::STAGE_7;
     }
-
     public function getIsInProgressAttribute(): bool
     {
         return $this->status !== self::STAGE_7;
     }
-
     public function getWorkflowData(?User $user = null): array
     {
         /*
@@ -193,7 +172,6 @@ class Procurement extends Model
         $latestDelivery = $deliveries->first();
         $implementation = $this->implementation;
         $capa = $this->capa;
-
         /*
         |--------------------------------------------------------------------------
         | Activity Logs

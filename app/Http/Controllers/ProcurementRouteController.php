@@ -1,10 +1,7 @@
 <?php
-
 namespace App\Http\Controllers;
-
 use App\Models\ProcurementRoute;
 use Illuminate\Http\Request;
-
 class ProcurementRouteController extends Controller
 {
     /**
@@ -14,7 +11,6 @@ class ProcurementRouteController extends Controller
     {
         //
     }
-
     /**
      * Show the form for creating a new resource.
      */
@@ -22,7 +18,6 @@ class ProcurementRouteController extends Controller
     {
         //
     }
-
     /**
      * Store a newly created resource in storage.
      */
@@ -30,7 +25,6 @@ class ProcurementRouteController extends Controller
     {
         //
     }
-
     /**
      * Display the specified resource.
      */
@@ -38,7 +32,6 @@ class ProcurementRouteController extends Controller
     {
         //
     }
-
     /**
      * Show the form for editing the specified resource.
      */
@@ -46,7 +39,6 @@ class ProcurementRouteController extends Controller
     {
         //
     }
-
     /**
      * Update the specified resource in storage.
      */
@@ -54,7 +46,6 @@ class ProcurementRouteController extends Controller
     {
         //
     }
-
     /**
      * Remove the specified resource from storage.
      */

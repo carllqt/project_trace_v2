@@ -1,10 +1,7 @@
 <?php
-
 namespace App\Http\Middleware;
-
 use Illuminate\Http\Request;
 use Inertia\Middleware;
-
 class HandleInertiaRequests extends Middleware
 {
     /**
@@ -13,7 +10,6 @@ class HandleInertiaRequests extends Middleware
      * @var string
      */
     protected $rootView = 'app';
-
     /**
      * Determine the current asset version.
      */
@@ -21,7 +17,6 @@ class HandleInertiaRequests extends Middleware
     {
         return parent::version($request);
     }
-
     /**
      * Define the props that are shared by default.
      *

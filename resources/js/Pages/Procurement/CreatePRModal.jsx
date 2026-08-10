@@ -4,7 +4,6 @@ import InputField from "../../Components/InputField";
 import FileUploadField from "../../Components/FileUploadField";
 import SelectField from "../../Components/SelectField";
 import InputError from "../../Components/InputError";
-
 export default function CreatePRModal({
     departments,
     isOpen,
@@ -16,14 +15,12 @@ export default function CreatePRModal({
     processing,
 }) {
     if (!isOpen) return null;
-
     const departmentOptions = Object.entries(departments ?? {}).map(
         ([id, name]) => ({
             value: id,
             label: name,
         }),
     );
-
     const procurementOptions = [
         {
             value: "Small Value Procurement (Sec. 53.9)",
@@ -42,7 +39,6 @@ export default function CreatePRModal({
             label: "Repeat Order",
         },
     ];
-
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             {/* Backdrop */}
@@ -50,7 +46,6 @@ export default function CreatePRModal({
                 className="absolute inset-0 bg-slate-950/50 backdrop-blur-[3px]"
                 onClick={processing ? undefined : onClose}
             />
-
             {/* Modal */}
             <div className="relative z-10 flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
                 {/* Header */}
@@ -59,18 +54,15 @@ export default function CreatePRModal({
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                             <FilePlus className="h-5 w-5" />
                         </div>
-
                         <div>
                             <h2 className="text-sm font-bold text-slate-900">
                                 Create Purchase Request
                             </h2>
-
                             <p className="mt-0.5 text-[11px] font-medium text-slate-500">
                                 Stage 1 · Initialize a new procurement request
                             </p>
                         </div>
                     </div>
-
                     <button
                         type="button"
                         onClick={onClose}
@@ -80,7 +72,6 @@ export default function CreatePRModal({
                         <X className="h-4 w-4" />
                     </button>
                 </div>
-
                 {/* Content */}
                 <form
                     onSubmit={onSubmit}
@@ -93,12 +84,10 @@ export default function CreatePRModal({
                                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
                                     <ClipboardList className="h-3.5 w-3.5" />
                                 </div>
-
                                 <div>
                                     <h3 className="text-xs font-bold text-slate-800">
                                         Request Information
                                     </h3>
-
                                     <p className="text-[10px] font-medium text-slate-400">
                                         Basic details of the purchase request
                                     </p>
@@ -136,7 +125,6 @@ export default function CreatePRModal({
                                         }
                                         required
                                     />
-
                                     <InputError
                                         message={errors.project_title}
                                     />
@@ -154,7 +142,6 @@ export default function CreatePRModal({
                                         placeholder="Select department"
                                         required
                                     />
-
                                     <InputError message={errors.end_user} />
                                 </div>
                                 {/* ABC */}
@@ -172,7 +159,6 @@ export default function CreatePRModal({
                                         }
                                         required
                                     />
-
                                     <InputError message={errors.abc} />
                                 </div>
                                 {/* Date of Implementation */}
@@ -189,30 +175,25 @@ export default function CreatePRModal({
                                             )
                                         }
                                     />
-
                                     <InputError
                                         message={errors.date_of_implementation}
                                     />
                                 </div>
                             </div>
                         </div>
-
                         {/* Divider */}
                         <div className="my-5 border-t border-slate-100" />
-
                         {/* Section: Procurement Details */}
                         <div className="mb-5">
                             <div className="mb-3">
                                 <h3 className="text-xs font-bold text-slate-800">
                                     Procurement Details
                                 </h3>
-
                                 <p className="mt-0.5 text-[10px] font-medium text-slate-400">
                                     Specify how and why the procurement is being
                                     requested
                                 </p>
                             </div>
-
                             <div className="space-y-4">
                                 {/* Mode of Procurement */}
                                 <div>
@@ -230,12 +211,10 @@ export default function CreatePRModal({
                                         placeholder="Select procurement mode"
                                         required
                                     />
-
                                     <InputError
                                         message={errors.mode_of_procurement}
                                     />
                                 </div>
-
                                 {/* Purpose */}
                                 <div>
                                     <InputField
@@ -247,34 +226,28 @@ export default function CreatePRModal({
                                             setData("purpose", e.target.value)
                                         }
                                     />
-
                                     <InputError message={errors.purpose} />
                                 </div>
                             </div>
                         </div>
-
                         {/* Divider */}
                         <div className="my-5 border-t border-slate-100" />
-
                         {/* Section: Documents */}
                         <div>
                             <div className="mb-3 flex items-center gap-2">
                                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
                                     <Paperclip className="h-3.5 w-3.5" />
                                 </div>
-
                                 <div>
                                     <h3 className="text-xs font-bold text-slate-800">
                                         Supporting Documents
                                     </h3>
-
                                     <p className="text-[10px] font-medium text-slate-400">
                                         Attach the required procurement
                                         documents
                                     </p>
                                 </div>
                             </div>
-
                             <FileUploadField
                                 label="PPMP, Market Scoping & PR Documents"
                                 files={data.documents}
@@ -290,7 +263,6 @@ export default function CreatePRModal({
                             />
                         </div>
                     </div>
-
                     {/* Footer */}
                     <div className="flex shrink-0 items-center justify-between border-t border-slate-100 bg-slate-50/70 px-6 py-4">
                         <p className="hidden text-[10px] font-medium text-slate-400 sm:block">
@@ -298,7 +270,6 @@ export default function CreatePRModal({
                             <span className="text-red-500">*</span> are
                             required.
                         </p>
-
                         <div className="ml-auto flex items-center gap-2">
                             <button
                                 type="button"
@@ -308,7 +279,6 @@ export default function CreatePRModal({
                             >
                                 Cancel
                             </button>
-
                             <button
                                 type="submit"
                                 disabled={processing}

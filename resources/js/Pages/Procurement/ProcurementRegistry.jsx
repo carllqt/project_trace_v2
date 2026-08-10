@@ -15,7 +15,6 @@ import StatusBadge from "@/Pages/Procurement/Partials/StatusBadge";
 import axios from "axios";
 import { useState } from "react";
 import ProcurementDrawerModal from "./ProcurementDrawerModal";
-
 export default function ProcurementRegistry({
     procurements = [],
     queryParams,
@@ -30,11 +29,9 @@ export default function ProcurementRegistry({
     const handleViewProcurement = async (procurementId) => {
         try {
             setIsLoadingProcurement(true);
-
             const response = await axios.get(
                 route("procurement.show", procurementId),
             );
-
             setSelectedProcurement(response.data);
             setIsProcurementModalOpen(true);
         } catch (error) {
@@ -43,7 +40,6 @@ export default function ProcurementRegistry({
             setIsLoadingProcurement(false);
         }
     };
-
     const handleClose = () => {
         setSelectedProcurement(null);
     };
@@ -73,7 +69,6 @@ export default function ProcurementRegistry({
             key: "route_status",
             label: "Route Status",
         },
-
         {
             key: "status_display",
             label: "Status",
@@ -91,29 +86,24 @@ export default function ProcurementRegistry({
             <div className="min-w-[220px]">
                 <div className="flex items-center gap-2">
                     <FileText className="h-3.5 w-3.5 shrink-0 text-blue-500" />
-
                     <div className="min-w-0">
                         <div className="text-xs font-bold text-slate-800">
                             {procurement.pr_no}
                         </div>
-
                         <div className="mt-0.5 max-w-[260px] truncate text-xs font-medium text-slate-600">
                             {procurement.project_title ||
                                 "Untitled Procurement"}
                         </div>
                     </div>
                 </div>
-
                 <div className="ml-5 mt-1 text-[10px] text-slate-400">
                     {procurement.mode_of_procurement || "—"}
                 </div>
             </div>
         ),
-
         abc: (procurement) => (
             <div className="flex items-center gap-1.5 whitespace-nowrap">
                 <Wallet className="h-3.5 w-3.5 text-slate-400" />
-
                 <span className="text-xs font-semibold text-slate-700">
                     ₱
                     {Number(procurement.abc ?? 0).toLocaleString(undefined, {
@@ -123,30 +113,24 @@ export default function ProcurementRegistry({
                 </span>
             </div>
         ),
-
         stage: (procurement) => {
             const stageIndex = PROCUREMENT_STAGES.findIndex(
                 (stage) => stage.value === procurement.status,
             );
-
             const currentStage = PROCUREMENT_STAGES[stageIndex];
-
             if (!currentStage) {
                 return <span className="text-xs text-slate-400">—</span>;
             }
-
             return (
                 <div className="min-w-[210px]">
                     <div className="flex items-center gap-2">
                         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-blue-50 text-[10px] font-bold text-blue-600">
                             {stageIndex + 1}
                         </span>
-
                         <div className="min-w-0">
                             <div className="truncate text-xs font-semibold text-slate-700">
                                 {currentStage.label}
                             </div>
-
                             <div className="text-[10px] text-slate-400">
                                 Stage {stageIndex + 1} of{" "}
                                 {PROCUREMENT_STAGES.length}
@@ -156,37 +140,30 @@ export default function ProcurementRegistry({
                 </div>
             );
         },
-
         end_user: (procurement) => (
             <div className="flex max-w-[160px] items-center gap-2">
                 <Building2 className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-
                 <span className="truncate text-xs font-medium text-slate-700">
                     {procurement.end_user || "—"}
                 </span>
             </div>
         ),
-
         current_location: (procurement) => {
             const route = procurement.route;
-
             return (
                 <div className="min-w-[180px]">
                     <div className="flex items-center gap-2">
                         <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-
                         <span className="truncate text-xs font-semibold text-slate-700">
                             {procurement.current_department || "Unknown"}
                         </span>
                     </div>
-
                     {route?.received_by && (
                         <div className="ml-5 mt-1 flex items-center gap-1 text-[10px] text-slate-400">
                             <UserCheck className="h-3 w-3" />
                             {route.received_by}
                         </div>
                     )}
-
                     {!route?.received_by && route?.forwarded_by && (
                         <div className="ml-5 mt-1 flex items-center gap-1 text-[10px] text-slate-400">
                             <Send className="h-3 w-3" />
@@ -196,7 +173,6 @@ export default function ProcurementRegistry({
                 </div>
             );
         },
-
         route_status: (procurement) => {
             if (procurement.is_completed) {
                 return (
@@ -205,7 +181,6 @@ export default function ProcurementRegistry({
                     </span>
                 );
             }
-
             if (procurement.requires_my_action) {
                 return (
                     <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-700">
@@ -213,7 +188,6 @@ export default function ProcurementRegistry({
                     </span>
                 );
             }
-
             return (
                 <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600">
                     <Send className="h-3 w-3" />
@@ -221,11 +195,9 @@ export default function ProcurementRegistry({
                 </span>
             );
         },
-
         status_display: (procurement) => (
             <StatusBadge completed={procurement.is_completed} />
         ),
-
         actions: (procurement) => (
             <button
                 type="button"
@@ -237,7 +209,6 @@ export default function ProcurementRegistry({
             </button>
         ),
     };
-
     return (
         <div className="space-y-4">
             {/* Filter Toolbar */}
@@ -256,7 +227,6 @@ export default function ProcurementRegistry({
                         <span>Procurement Registry & Routing Status</span>
                     </h2>
                 </div>
-
                 <DynamicTable
                     data={procurements.data}
                     allColumns={allColumns}
@@ -267,7 +237,6 @@ export default function ProcurementRegistry({
                     }
                 />
             </div>
-
             <ProcurementDrawerModal
                 isOpen={selectedProcurement}
                 onClose={() => handleClose(false)}

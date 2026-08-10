@@ -15,7 +15,6 @@ import CreatePRModal from "@/Pages/Procurement/CreatePRModal";
 import { toast } from "sonner";
 import ProcurementDashboardHeader from "@/Components/Header";
 import ProcurementRegistry from "./ProcurementRegistry";
-
 export default function Dashboard({
     departments,
     procurements,
@@ -26,7 +25,6 @@ export default function Dashboard({
     const breadcrumbs = [{ label: "Dashboard", showOnMobile: true }];
     const user = auth?.user;
     const [showCreateModal, setShowCreateModal] = useState(false);
-
     const { data, setData, post, processing, errors, reset } = useForm({
         pr_no: "",
         project_title: "",
@@ -37,45 +35,35 @@ export default function Dashboard({
         purpose: "",
         documents: [],
     });
-
     const handleCreatePR = (e) => {
         e.preventDefault();
-
         post(route("procurement.store"), {
             forceFormData: true,
-
             onSuccess: () => {
                 toast.success("Procurement created successfully.");
                 setShowCreateModal(false);
                 reset();
             },
-
             onError: (errors) => {
                 const firstError = Object.values(errors)[0];
-
                 toast.error(
                     Array.isArray(firstError) ? firstError[0] : firstError,
                 );
             },
         });
     };
-
     useEffect(() => {
         if (flash?.success) {
             toast.success(flash.success);
         }
-
         if (flash?.error) {
             toast.error(flash.error);
         }
     }, [flash]);
-
     return (
         <MainLayout>
             <Head title="Dashboard" />
-
             <BreadCrumbsHeader breadcrumbs={breadcrumbs} />
-
             <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-7">
                 <div className="w-full space-y-6">
                     {/* <pre>{JSON.stringify(procurements, undefined, 2)}</pre> */}
@@ -83,7 +71,6 @@ export default function Dashboard({
                         stats={stats}
                         onCreate={() => setShowCreateModal(true)}
                     />
-
                     <ProcurementRegistry
                         queryParams={queryParams}
                         procurements={procurements}
