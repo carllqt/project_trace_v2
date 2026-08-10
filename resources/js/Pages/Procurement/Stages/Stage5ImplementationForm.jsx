@@ -9,18 +9,20 @@ export default function Stage5ImplementationForm({
 
     const implementation = currentPR.stage_data?.implementation ?? {};
 
+    const getValue = (e) => (e?.target ? e.target.value : e);
+
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <InputField
                 label="Implementation Date"
                 type="date"
                 value={implementation.implementation_date ?? ""}
-                onChange={(val) =>
+                onChange={(e) =>
                     handleStageDataChange(
                         currentPR.id,
                         "implementation",
                         "implementation_date",
-                        val,
+                        getValue(e),
                     )
                 }
                 disabled={!isCurrentStage}
@@ -30,12 +32,12 @@ export default function Stage5ImplementationForm({
                 label="Attendance Sheet Doc Reference"
                 placeholder="e.g. Att_Sheet_Signed.pdf"
                 value={implementation.attendance_sheet_name ?? ""}
-                onChange={(val) =>
+                onChange={(e) =>
                     handleStageDataChange(
                         currentPR.id,
                         "implementation",
                         "attendance_sheet_name",
-                        val,
+                        getValue(e),
                     )
                 }
                 disabled={!isCurrentStage}
@@ -45,12 +47,12 @@ export default function Stage5ImplementationForm({
                 label="Terminal Report Reference"
                 placeholder="e.g. Final_Terminal_Report.pdf"
                 value={implementation.terminal_report_name ?? ""}
-                onChange={(val) =>
+                onChange={(e) =>
                     handleStageDataChange(
                         currentPR.id,
                         "implementation",
                         "terminal_report_name",
-                        val,
+                        getValue(e),
                     )
                 }
                 disabled={!isCurrentStage}

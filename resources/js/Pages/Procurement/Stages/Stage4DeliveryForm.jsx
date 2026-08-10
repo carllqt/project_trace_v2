@@ -9,18 +9,20 @@ export default function Stage4DeliveryForm({
 
     const delivery = currentPR.stage_data?.delivery ?? {};
 
+    const getValue = (e) => (e?.target ? e.target.value : e);
+
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <InputField
                 label="IAR No. (Inspection Report)"
                 placeholder="IAR-2026-XXXX"
                 value={delivery.iar_no ?? ""}
-                onChange={(val) =>
+                onChange={(e) =>
                     handleStageDataChange(
                         currentPR.id,
                         "delivery",
                         "iar_no",
-                        val,
+                        getValue(e),
                     )
                 }
                 disabled={!isCurrentStage}
@@ -30,12 +32,12 @@ export default function Stage4DeliveryForm({
                 label="Date of Delivery"
                 type="date"
                 value={delivery.delivery_date ?? ""}
-                onChange={(val) =>
+                onChange={(e) =>
                     handleStageDataChange(
                         currentPR.id,
                         "delivery",
                         "delivery_date",
-                        val,
+                        getValue(e),
                     )
                 }
                 disabled={!isCurrentStage}
@@ -45,19 +47,19 @@ export default function Stage4DeliveryForm({
                 label="Date of Inspection"
                 type="date"
                 value={delivery.inspection_date ?? ""}
-                onChange={(val) =>
+                onChange={(e) =>
                     handleStageDataChange(
                         currentPR.id,
                         "delivery",
                         "inspection_date",
-                        val,
+                        getValue(e),
                     )
                 }
                 disabled={!isCurrentStage}
             />
 
             <div>
-                <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                <label className="mb-1 block text-[11px] font-bold text-slate-600">
                     Delivery Status
                 </label>
 
@@ -72,7 +74,7 @@ export default function Stage4DeliveryForm({
                         )
                     }
                     disabled={!isCurrentStage}
-                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-slate-100"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-slate-100"
                 >
                     <option value="Complete">Complete Delivery</option>
 
