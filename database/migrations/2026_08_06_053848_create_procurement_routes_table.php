@@ -37,7 +37,8 @@ return new class extends Migration
                 'Approved',
                 'Returned',
                 'Rejected',
-                'Completed'
+                'Completed',
+                'Retrieved'
             ]);
             $table->text('remarks')->nullable();
             $table->timestamp('forwarded_at')->nullable();

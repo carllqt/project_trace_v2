@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import SidebarModal from "@/components/SidebarModal";
-import CreatePRModal from "@/Pages/Procurement/CreatePRModal";
+import CreatePRModal from "@/Pages/Procurement/Partials/CreatePRModal";
 import { toast } from "sonner";
 import ProcurementDashboardHeader from "@/Components/Header";
 import ProcurementRegistry from "./ProcurementRegistry";

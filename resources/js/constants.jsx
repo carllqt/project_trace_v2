@@ -318,7 +318,7 @@ export const PROCUREMENT_STAGES = [
         id: 6,
         value: "stage_6",
         label: "Payment Processing",
-        name: "Payment & CAPA",
+        name: "Payment",
         actor: "Accounting & Cashier",
         department: "Accounting Office",
         color: "from-emerald-500 to-green-600",

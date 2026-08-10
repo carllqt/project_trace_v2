@@ -31,6 +31,10 @@ Route::middleware(['auth', 'role:user'])->group(function () {
 
     Route::post('/procurement/{procurement}/route', [ProcurementController::class, 'route'])
     ->name('procurement.route');
+    Route::post(
+    '/procurement/{procurement}/retrieve',
+        [ProcurementController::class, 'retrieve']
+    )->name('procurement.retrieve');
 
     Route::resource('procurement', ProcurementController::class);
     // Add more user routes here

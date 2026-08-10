@@ -1,11 +1,13 @@
-import { CornerUpLeft, Send, Lock } from "lucide-react";
+import { CornerUpLeft, Send, Lock, RotateCcw } from "lucide-react";
 
 export default function ProcurementDrawerActionBar({
     currentPR,
     stages,
     onReturn,
     onForward,
+    onRetrieve,
     canRoute,
+    canRetrieve,
 }) {
     if (!currentPR) {
         return null;
@@ -16,18 +18,51 @@ export default function ProcurementDrawerActionBar({
     const currentStage = Number(currentPR.stage) || 1;
 
     /*
-|--------------------------------------------------------------------------
-| ACTION PERMISSIONS
-|--------------------------------------------------------------------------
-|
-| A user can only perform routing actions when:
-|
-| 1. The PR is not completed.
-| 2. The user's department is the current holder.
-|
-| `canRoute` is calculated in ProcurementDrawerModal.
-|
-*/
+    |--------------------------------------------------------------------------
+    | FIND PREVIOUS FORWARDED ROUTE
+    |--------------------------------------------------------------------------
+    |
+    | Determines whether this procurement was previously forwarded by
+    | the current department to the next stage.
+    |
+    */
+
+    const routes = currentPR.routes ?? [];
+
+    const getNextStageRoute = () => {
+        const nextStage = currentStage + 1;
+
+        return [...routes].reverse().find((route) => {
+            const routeStage = Number(
+                String(route.stage ?? "").replace("stage_", ""),
+            );
+
+            return (
+                routeStage === nextStage &&
+                String(route.action ?? "").toLowerCase() === "forwarded"
+            );
+        });
+    };
+
+    const nextStageRoute = getNextStageRoute();
+
+    /*
+    |--------------------------------------------------------------------------
+    | RETRIEVE PERMISSION
+    |--------------------------------------------------------------------------
+    |
+    | A procurement can be retrieved when:
+    |
+    | 1. It is not completed.
+    | 2. There is a previous forward route to the next stage.
+    |
+    */
+
+    /*
+    |--------------------------------------------------------------------------
+    | ACTION PERMISSIONS
+    |--------------------------------------------------------------------------
+    */
 
     const canReturn = currentStage > 1 && !isCompleted && canRoute;
 
@@ -57,6 +92,19 @@ export default function ProcurementDrawerActionBar({
                 {/* -------------------------------------------------- */}
 
                 <div className="flex shrink-0 items-center gap-2">
+                    {/* RETRIEVE */}
+
+                    {canRetrieve && (
+                        <button
+                            type="button"
+                            onClick={() => onRetrieve?.()}
+                            className="flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-bold text-amber-700 transition-all hover:border-amber-300 hover:bg-amber-100 hover:text-amber-800"
+                        >
+                            <RotateCcw className="h-4 w-4" />
+                            <span>Retrieve</span>
+                        </button>
+                    )}
+
                     {/* RETURN */}
 
                     {canReturn && (

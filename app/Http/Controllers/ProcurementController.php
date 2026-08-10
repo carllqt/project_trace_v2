@@ -399,52 +399,60 @@ class ProcurementController extends Controller
             | 9. DETERMINE NEXT/PREVIOUS STAGE
             |--------------------------------------------------------------------------
             */
+
             $currentStage = (int) $validated['current_stage'];
+
             if ($validated['action'] === 'forward') {
                 $newStage = min(7, $currentStage + 1);
+
                 $routeAction = $newStage === 7
                     ? 'Completed'
                     : 'Forwarded';
+
+                $routeStatus = $newStage === 7
+                    ? 'completed'
+                    : 'in_transit';
             } else {
                 $newStage = max(1, $currentStage - 1);
+
                 $routeAction = 'Returned';
+                $routeStatus = 'returned';
             }
+
             /*
             |--------------------------------------------------------------------------
             | 10. GET CURRENT DEPARTMENT
             |--------------------------------------------------------------------------
             */
-            $fromDepartmentId =
-                $procurement->current_department_id;
+
+            $fromDepartmentId = $procurement->current_department_id;
+
             /*
             |--------------------------------------------------------------------------
-            | 11. UPDATE PROCUREMENT STATUS
+            | 11. UPDATE PROCUREMENT
             |--------------------------------------------------------------------------
             */
+
             $procurement->update([
                 'status' => Procurement::stageFromNumber($newStage),
                 'current_department_id' => $targetDepartment->id,
+                'route_status' => $routeStatus,
             ]);
+
             /*
             |--------------------------------------------------------------------------
             | 12. CREATE ROUTING HISTORY
             |--------------------------------------------------------------------------
             */
+
             $procurement->routes()->create([
-                'from_department_id' =>
-                    $fromDepartmentId,
-                'to_department_id' =>
-                    $targetDepartment->id,
-                'forwarded_by' =>
-                    auth()->id(),
-                'stage' =>
-                    'stage_' . $newStage,
-                'action' =>
-                    $routeAction,
-                'remarks' =>
-                    $validated['remarks'] ?? null,
-                'forwarded_at' =>
-                    now(),
+                'from_department_id' => $fromDepartmentId,
+                'to_department_id' => $targetDepartment->id,
+                'forwarded_by' => auth()->id(),
+                'stage' => 'stage_' . $newStage,
+                'action' => $routeAction,
+                'remarks' => $validated['remarks'] ?? null,
+                'forwarded_at' => now(),
             ]);
         });
         return back()->with(
@@ -452,4 +460,92 @@ class ProcurementController extends Controller
             'Procurement routed successfully.'
         );
     }
+
+
+    public function retrieve(Procurement $procurement)
+    {
+        DB::transaction(function () use ($procurement) {
+
+            $userDepartmentId = auth()->user()->department_id;
+
+            /*
+            |--------------------------------------------------------------------------
+            | FIND THE LATEST UNRECEIVED FORWARD
+            |--------------------------------------------------------------------------
+            */
+            $route = $procurement->routes()
+                ->where('from_department_id', $userDepartmentId)
+                ->where('action', 'Forwarded')
+                ->whereNull('received_at')
+                ->latest('forwarded_at')
+                ->first();
+
+            abort_unless(
+                $route,
+                403,
+                'This procurement cannot be retrieved.'
+            );
+
+            /*
+            |--------------------------------------------------------------------------
+            | DETERMINE PREVIOUS STAGE
+            |--------------------------------------------------------------------------
+            |
+            | The forwarded route contains the destination stage.
+            | Example:
+            |
+            | Stage 1 ICT Unit
+            |       ↓ Forwarded
+            | Stage 2 Procurement Unit
+            |
+            | Retrieve should restore Stage 1.
+            |
+            */
+            $forwardedStage = (int) str_replace(
+                'stage_',
+                '',
+                $route->stage
+            );
+
+            $previousStage = max(1, $forwardedStage - 1);
+
+            /*
+            |--------------------------------------------------------------------------
+            | RESTORE PREVIOUS DEPARTMENT AND STAGE
+            |--------------------------------------------------------------------------
+            */
+            $procurement->update([
+                'status' => Procurement::stageFromNumber($previousStage),
+                'current_department_id' => $route->from_department_id,
+                'route_status' => 'received',
+            ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | RECORD RETRIEVAL
+            |--------------------------------------------------------------------------
+            */
+            $procurement->routes()->create([
+                'from_department_id' => $route->to_department_id,
+                'to_department_id' => $route->from_department_id,
+                'forwarded_by' => auth()->id(),
+
+                // Record the stage that was restored
+                'stage' => 'stage_' . $previousStage,
+
+                'action' => 'Retrieved',
+
+                'remarks' =>
+                    'Procurement retrieved by the originating department.',
+
+                'forwarded_at' => now(),
+            ]);
+        });
+
+        return back()->with(
+            'success',
+            'Procurement retrieved successfully.'
+        );
+    }
+
 }

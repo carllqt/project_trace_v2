@@ -26,6 +26,7 @@ export default function ProcurementRegistry({
     const [selectedProcurement, setSelectedProcurement] = useState(null);
     const [isProcurementModalOpen, setIsProcurementModalOpen] = useState(false);
     const [isLoadingProcurement, setIsLoadingProcurement] = useState(false);
+
     const handleViewProcurement = async (procurementId) => {
         try {
             setIsLoadingProcurement(true);

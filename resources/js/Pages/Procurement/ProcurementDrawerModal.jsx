@@ -12,61 +12,11 @@ import ProcurementDrawerTabs from "./Partials/ProcurementDrawerTabs";
 import ProcurementDrawerHeader from "./Partials/ProcurementDrawerHeader";
 import ProcurementDrawerActionBar from "./Partials/ProcurementDrawerActionBar";
 import { normalizePR } from "@/utils/utils";
+import { PROCUREMENT_STAGES } from "@/constants";
 // ---------------------------------------------------------
 // PROCUREMENT STAGES
 // ---------------------------------------------------------
-const STAGES = [
-    {
-        id: 1,
-        name: "PR Preparation",
-        actor: "End-User Dept",
-        color: "from-blue-500 to-indigo-600",
-        department: "End User Department",
-    },
-    {
-        id: 2,
-        name: "RFQ Preparation",
-        actor: "BAC Secretariat",
-        color: "from-indigo-500 to-purple-600",
-        department: "BAC Secretariat",
-    },
-    {
-        id: 3,
-        name: "Purchase Order",
-        actor: "Procurement / Finance",
-        color: "from-purple-500 to-pink-600",
-        department: "Budget & Accounting",
-    },
-    {
-        id: 4,
-        name: "Delivery",
-        actor: "Supply & Property",
-        color: "from-amber-500 to-orange-600",
-        department: "Supply & Property Office",
-    },
-    {
-        id: 5,
-        name: "Implementation",
-        actor: "End-User / Project Lead",
-        color: "from-teal-500 to-emerald-600",
-        department: "End User Department",
-    },
-    {
-        id: 6,
-        name: "Payment Processing",
-        actor: "Accounting & Cashier",
-        color: "from-emerald-500 to-green-600",
-        department: "Accounting Office",
-    },
-    {
-        id: 7,
-        name: "Completed",
-        actor: "Completed",
-        color: "from-green-500 to-emerald-600",
-        department: "Completed",
-        docs: [],
-    },
-];
+
 // ---------------------------------------------------------
 // MAIN COMPONENT
 // ---------------------------------------------------------
@@ -83,6 +33,7 @@ export default function ProcurementDrawerModal({
     const [defaultTargetDept, setDefaultTargetDept] = useState("");
     const [targetDept, setTargetDept] = useState("");
     const [stageFiles, setStageFiles] = useState({});
+
     // ---------------------------------------------------------
     // ROLE / DEPARTMENT ACCESS
     // ---------------------------------------------------------
@@ -105,6 +56,7 @@ export default function ProcurementDrawerModal({
     const canEditStageForm = canAccessCurrentStage;
     const canUploadDocuments = canAccessCurrentStage;
     const canRoute = canAccessCurrentStage;
+
     // ---------------------------------------------------------
     // UPDATE WHEN INITIAL DATA CHANGES
     // ---------------------------------------------------------
@@ -118,6 +70,7 @@ export default function ProcurementDrawerModal({
         setDefaultTargetDept(normalized?.current_department ?? "");
         setTargetDept(normalized?.current_department ?? "");
     }, [initialData]);
+
     // ---------------------------------------------------------
     // STAGE DATA CHANGE
     // ---------------------------------------------------------
@@ -142,6 +95,7 @@ export default function ProcurementDrawerModal({
             };
         });
     };
+
     // ---------------------------------------------------------
     // RECEIVE PR
     // ---------------------------------------------------------
@@ -192,12 +146,12 @@ export default function ProcurementDrawerModal({
             return;
         }
         const currentStage = Number(currentPR.stage) || 1;
-        const currentStageIndex = STAGES.findIndex(
+        const currentStageIndex = PROCUREMENT_STAGES.findIndex(
             (stage) => Number(stage.id) === currentStage,
         );
-        const nextStage = STAGES[currentStageIndex + 1];
+        const nextStage = PROCUREMENT_STAGES[currentStageIndex + 1];
         const isFinalStage =
-            !nextStage || currentStageIndex === STAGES.length - 1;
+            !nextStage || currentStageIndex === PROCUREMENT_STAGES.length - 1;
         const nextStageNumber = isFinalStage
             ? currentStage
             : Number(nextStage.id);
@@ -259,10 +213,10 @@ export default function ProcurementDrawerModal({
             return;
         }
         const currentStage = Number(currentPR.stage) || 1;
-        const currentStageIndex = STAGES.findIndex(
+        const currentStageIndex = PROCUREMENT_STAGES.findIndex(
             (stage) => Number(stage.id) === currentStage,
         );
-        const previousStage = STAGES[currentStageIndex - 1];
+        const previousStage = PROCUREMENT_STAGES[currentStageIndex - 1];
         // Cannot return before Stage 1
         if (!previousStage) {
             return;
@@ -324,10 +278,10 @@ export default function ProcurementDrawerModal({
         if (!currentPR || !canAccessCurrentStage) {
             return;
         }
-        const currentStageIndex = STAGES.findIndex(
+        const currentStageIndex = PROCUREMENT_STAGES.findIndex(
             (stage) => Number(stage.id) === Number(currentPR.stage),
         );
-        const nextStage = STAGES[currentStageIndex + 1];
+        const nextStage = PROCUREMENT_STAGES[currentStageIndex + 1];
         if (!nextStage) {
             return;
         }
@@ -337,16 +291,79 @@ export default function ProcurementDrawerModal({
         setShowRoutingModal(true);
     };
     // ---------------------------------------------------------
+    // RETRIEVE PERMISSION
+    // ---------------------------------------------------------
+    const getRetrievableRoute = () => {
+        if (!currentPR || currentPR.status === "completed") {
+            return null;
+        }
+
+        const routes = currentPR.routes ?? [];
+
+        const userDept = (currentRole?.dept ?? "").trim().toLowerCase();
+
+        if (!userDept) {
+            return null;
+        }
+
+        const route = [...routes].reverse().find((item) => {
+            const fromDept = (item.from_dept ?? "").trim().toLowerCase();
+
+            const action = String(item.action ?? "").toLowerCase();
+
+            const received = item.received_at || item.received_by;
+
+            return (
+                fromDept === userDept &&
+                action === "forwarded" &&
+                !received &&
+                currentPR.route_status === "in_route"
+            );
+        });
+
+        return route ?? null;
+    };
+
+    const retrievableRoute = getRetrievableRoute();
+
+    const canRetrieve = Boolean(retrievableRoute);
+    const handleRetrievePR = () => {
+        if (!currentPR || !retrievableRoute) {
+            return;
+        }
+
+        router.post(
+            route("procurement.retrieve", {
+                procurement: currentPR.id,
+            }),
+            {},
+            {
+                preserveScroll: true,
+
+                onSuccess: () => {
+                    setShowRoutingModal(false);
+
+                    // Close the Procurement Drawer Modal
+                    onClose?.();
+
+                    router.reload({
+                        preserveScroll: true,
+                    });
+                },
+            },
+        );
+    };
+    // ---------------------------------------------------------
     // OPEN RETURN MODAL
     // ---------------------------------------------------------
     const handleReturnClick = () => {
         if (!currentPR || !canAccessCurrentStage) {
             return;
         }
-        const currentStageIndex = STAGES.findIndex(
+        const currentStageIndex = PROCUREMENT_STAGES.findIndex(
             (stage) => Number(stage.id) === Number(currentPR.stage),
         );
-        const previousStage = STAGES[currentStageIndex - 1];
+        const previousStage = PROCUREMENT_STAGES[currentStageIndex - 1];
         if (!previousStage) {
             return;
         }
@@ -378,7 +395,7 @@ export default function ProcurementDrawerModal({
                 <ProcurementDrawerHeader currentPR={currentPR} />
                 {/* STAGE STEPPER */}
                 <ProcurementStageStepper
-                    stages={STAGES}
+                    stages={PROCUREMENT_STAGES}
                     currentPR={currentPR}
                 />
                 {/* TABS */}
@@ -420,10 +437,12 @@ export default function ProcurementDrawerModal({
                 {/* ACTION BAR */}
                 <ProcurementDrawerActionBar
                     currentPR={currentPR}
-                    stages={STAGES}
+                    stages={PROCUREMENT_STAGES}
                     onReturn={handleReturnClick}
                     onForward={handleForwardClick}
+                    onRetrieve={handleRetrievePR}
                     canRoute={canRoute}
+                    canRetrieve={canRetrieve}
                 />
             </div>
             {/* ROUTING MODAL */}
