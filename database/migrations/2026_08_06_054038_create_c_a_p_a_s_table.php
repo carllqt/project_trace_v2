@@ -21,7 +21,6 @@ return new class extends Migration
                 ->cascadeOnDelete();
 
             $table->date('calendar_of_activities')->nullable();
-
             $table->timestamps();
 
         });

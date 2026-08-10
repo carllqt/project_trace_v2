@@ -1,0 +1,573 @@
+import React, { useEffect, useState } from "react";
+import { router } from "@inertiajs/react";
+import { FileSpreadsheet } from "lucide-react";
+
+import SidebarModal from "@/Components/SidebarModal";
+import { DEPARTMENTS } from "@/constants";
+
+import RoutingModal from "./Partials/RoutingModal";
+import StageFormsTab from "./Partials/StageFormsTab";
+import RoutingHistoryTab from "./Routing/RoutingHistoryTab";
+import DocumentsTab from "./Documents/DocumentsTab";
+import ProcurementStageStepper from "./Partials/ProcurementStageStepper";
+import ProcurementDrawerTabs from "./Partials/ProcurementDrawerTabs";
+import ProcurementDrawerHeader from "./Partials/ProcurementDrawerHeader";
+import ProcurementDrawerActionBar from "./Partials/ProcurementDrawerActionBar";
+
+// ---------------------------------------------------------
+// PROCUREMENT STAGES
+// ---------------------------------------------------------
+
+const STAGES = [
+    {
+        id: 1,
+        name: "PR Preparation",
+        actor: "End-User Dept",
+        color: "from-blue-500 to-indigo-600",
+        department: "End User Department",
+    },
+    {
+        id: 2,
+        name: "RFQ Preparation",
+        actor: "BAC Secretariat",
+        color: "from-indigo-500 to-purple-600",
+        department: "BAC Secretariat",
+    },
+    {
+        id: 3,
+        name: "Purchase Order",
+        actor: "Procurement / Finance",
+        color: "from-purple-500 to-pink-600",
+        department: "Budget & Accounting",
+    },
+    {
+        id: 4,
+        name: "Delivery",
+        actor: "Supply & Property",
+        color: "from-amber-500 to-orange-600",
+        department: "Supply & Property Office",
+    },
+    {
+        id: 5,
+        name: "Implementation",
+        actor: "End-User / Project Lead",
+        color: "from-teal-500 to-emerald-600",
+        department: "End User Department",
+    },
+    {
+        id: 6,
+        name: "Payment Processing",
+        actor: "Accounting & Cashier",
+        color: "from-emerald-500 to-green-600",
+        department: "Accounting Office",
+    },
+    {
+        id: 7,
+        name: "Completed",
+        actor: "Completed",
+        color: "from-green-500 to-emerald-600",
+        department: "Completed",
+        docs: [],
+    },
+];
+
+// ---------------------------------------------------------
+// HELPERS
+// ---------------------------------------------------------
+
+const normalizePR = (data) => {
+    if (!data) {
+        return null;
+    }
+
+    const stage = Number(
+        data.stage ??
+            data.stage_number ??
+            String(data.status ?? "").replace("stage_", "") ??
+            1,
+    );
+
+    return {
+        ...data,
+
+        stage: Number.isFinite(stage) && stage > 0 ? stage : 1,
+
+        routes: Array.isArray(data.routes) ? data.routes : [],
+
+        activity_logs: Array.isArray(data.activity_logs)
+            ? data.activity_logs
+            : [],
+
+        documents: Array.isArray(data.documents) ? data.documents : [],
+
+        stage_data:
+            data.stage_data && typeof data.stage_data === "object"
+                ? data.stage_data
+                : {},
+
+        current_department:
+            data.current_department ??
+            data.department ??
+            data.currentDepartment ??
+            "",
+
+        route_status: data.route_status ?? "pending",
+
+        status: data.status ?? "in_progress",
+    };
+};
+
+// ---------------------------------------------------------
+// MAIN COMPONENT
+// ---------------------------------------------------------
+
+export default function ProcurementDrawerModal({
+    isOpen,
+    onClose,
+    initialData,
+    currentRole,
+}) {
+    // IMPORTANT:
+    // Hooks must always run before any conditional return.
+    const [currentPR, setCurrentPR] = useState(() => normalizePR(initialData));
+
+    const [activeDrawerTab, setActiveDrawerTab] = useState("stage_form");
+
+    const [routingRemarks, setRoutingRemarks] = useState("");
+
+    const [showRoutingModal, setShowRoutingModal] = useState(false);
+
+    const [routingType, setRoutingType] = useState("forward");
+
+    const [defaultTargetDept, setDefaultTargetDept] = useState("");
+
+    const [targetDept, setTargetDept] = useState("");
+    const [stageFiles, setStageFiles] = useState({});
+
+    // ---------------------------------------------------------
+    // UPDATE WHEN INITIAL DATA CHANGES
+    // ---------------------------------------------------------
+
+    useEffect(() => {
+        if (!initialData) {
+            setCurrentPR(null);
+            return;
+        }
+
+        const normalized = normalizePR(initialData);
+
+        setCurrentPR(normalized);
+
+        setDefaultTargetDept(normalized?.current_department ?? "");
+
+        setTargetDept(normalized?.current_department ?? "");
+    }, [initialData]);
+
+    // ---------------------------------------------------------
+    // STAGE DATA CHANGE
+    // ---------------------------------------------------------
+
+    const handleStageDataChange = (prId, stageKey, field, value) => {
+        setCurrentPR((prev) => {
+            if (!prev) return prev;
+
+            return {
+                ...prev,
+                stage_data: {
+                    ...(prev.stage_data ?? {}),
+                    [stageKey]: {
+                        ...(prev.stage_data?.[stageKey] ?? {}),
+                        [field]: value,
+                    },
+                },
+            };
+        });
+    };
+
+    // ---------------------------------------------------------
+    // RECEIVE PR
+    // ---------------------------------------------------------
+
+    const handleReceivePR = (prId) => {
+        if (!currentPR) {
+            return;
+        }
+
+        const timestamp = new Date().toLocaleString();
+
+        const roleName = currentRole?.name ?? "Current User";
+
+        const roleDept =
+            currentRole?.dept ?? currentPR.current_department ?? "";
+
+        setCurrentPR((prev) => {
+            if (!prev) {
+                return prev;
+            }
+
+            const routes = [...(prev.routes ?? [])];
+
+            if (routes.length > 0) {
+                const lastIndex = routes.length - 1;
+
+                routes[lastIndex] = {
+                    ...routes[lastIndex],
+                    received_by: roleName,
+                    received_at: timestamp,
+                };
+            }
+
+            return {
+                ...prev,
+
+                route_status: "received",
+
+                routes,
+
+                activity_logs: [
+                    {
+                        id: Date.now(),
+                        user: roleName,
+                        action: "Acknowledged Document",
+                        remarks: `Received document package at ${roleDept}`,
+                        timestamp,
+                    },
+
+                    ...(prev.activity_logs ?? []),
+                ],
+            };
+        });
+    };
+
+    // ---------------------------------------------------------
+    // FORWARD
+    // ---------------------------------------------------------
+
+    const handleForwardPR = (e) => {
+        e?.preventDefault();
+
+        if (!currentPR) {
+            return;
+        }
+
+        const currentStage = Number(currentPR.stage) || 1;
+
+        const currentStageIndex = STAGES.findIndex(
+            (stage) => Number(stage.id) === currentStage,
+        );
+
+        const nextStage = STAGES[currentStageIndex + 1];
+
+        const isFinalStage =
+            !nextStage || currentStageIndex === STAGES.length - 1;
+
+        const nextStageNumber = isFinalStage
+            ? currentStage
+            : Number(nextStage.id);
+
+        const timestamp = new Date().toLocaleString();
+
+        const roleName = currentRole?.name ?? "Current User";
+
+        const destination =
+            targetDept ||
+            defaultTargetDept ||
+            nextStage?.department ||
+            currentPR.current_department ||
+            "";
+
+        setCurrentPR((prev) => {
+            if (!prev) {
+                return prev;
+            }
+
+            return {
+                ...prev,
+
+                stage: nextStageNumber,
+
+                status: isFinalStage ? "completed" : "in_progress",
+
+                route_status: isFinalStage ? "completed" : "in_transit",
+
+                current_department: destination,
+
+                routes: [
+                    ...(prev.routes ?? []),
+
+                    {
+                        id: Date.now(),
+
+                        action: isFinalStage
+                            ? "Finalized & Closed"
+                            : `Forwarded to Stage ${nextStageNumber}`,
+
+                        from_dept: prev.current_department,
+
+                        to_dept: destination,
+
+                        forwarded_at: timestamp,
+
+                        forwarded_by: roleName,
+
+                        received_by: null,
+
+                        remarks: routingRemarks,
+                    },
+                ],
+
+                activity_logs: [
+                    {
+                        id: Date.now(),
+
+                        user: roleName,
+
+                        action: isFinalStage
+                            ? "Completed Procurement"
+                            : `Forwarded to ${destination}`,
+
+                        details: routingRemarks,
+
+                        timestamp,
+                    },
+
+                    ...(prev.activity_logs ?? []),
+                ],
+            };
+        });
+
+        setRoutingRemarks("");
+        setShowRoutingModal(false);
+    };
+
+    // ---------------------------------------------------------
+    // RETURN
+    // ---------------------------------------------------------
+
+    const handleReturnPR = (e) => {
+        e?.preventDefault();
+
+        if (!currentPR) {
+            return;
+        }
+
+        const currentStage = Number(currentPR.stage) || 1;
+
+        const currentStageIndex = STAGES.findIndex(
+            (stage) => Number(stage.id) === currentStage,
+        );
+
+        const previousStage = STAGES[currentStageIndex - 1];
+
+        if (!previousStage) {
+            return;
+        }
+
+        const timestamp = new Date().toLocaleString();
+
+        const roleName = currentRole?.name ?? "Current User";
+
+        const destination =
+            targetDept || defaultTargetDept || previousStage.department || "";
+
+        setCurrentPR((prev) => {
+            if (!prev) {
+                return prev;
+            }
+
+            return {
+                ...prev,
+
+                stage: Number(previousStage.id),
+
+                status: "in_progress",
+
+                route_status: "returned",
+
+                current_department: destination,
+
+                routes: [
+                    ...(prev.routes ?? []),
+
+                    {
+                        id: Date.now(),
+
+                        action: `Returned to Stage ${previousStage.id}`,
+
+                        from_dept: prev.current_department,
+
+                        to_dept: destination,
+
+                        forwarded_at: timestamp,
+
+                        forwarded_by: roleName,
+
+                        received_by: null,
+
+                        remarks: routingRemarks,
+                    },
+                ],
+
+                activity_logs: [
+                    {
+                        id: Date.now(),
+
+                        user: roleName,
+
+                        action: `Returned Document to ${destination}`,
+
+                        details: routingRemarks,
+
+                        timestamp,
+                    },
+
+                    ...(prev.activity_logs ?? []),
+                ],
+            };
+        });
+
+        setRoutingRemarks("");
+        setShowRoutingModal(false);
+    };
+
+    // ---------------------------------------------------------
+    // OPEN FORWARD MODAL
+    // ---------------------------------------------------------
+
+    const handleForwardClick = () => {
+        if (!currentPR) return;
+
+        const currentStageIndex = STAGES.findIndex(
+            (stage) => Number(stage.id) === Number(currentPR.stage),
+        );
+
+        const nextStage = STAGES[currentStageIndex + 1];
+
+        if (!nextStage) {
+            return;
+        }
+
+        setRoutingType("forward");
+        setDefaultTargetDept(nextStage.department ?? "");
+        setShowRoutingModal(true);
+    };
+
+    // ---------------------------------------------------------
+    // OPEN RETURN MODAL
+    // ---------------------------------------------------------
+
+    const handleReturnClick = () => {
+        if (!currentPR) return;
+
+        const currentStageIndex = STAGES.findIndex(
+            (stage) => Number(stage.id) === Number(currentPR.stage),
+        );
+
+        const previousStage = STAGES[currentStageIndex - 1];
+
+        if (!previousStage) {
+            return;
+        }
+
+        setRoutingType("return");
+        setDefaultTargetDept(previousStage.department ?? "");
+        setShowRoutingModal(true);
+    };
+
+    // ---------------------------------------------------------
+    // NO DATA
+    // ---------------------------------------------------------
+
+    if (!currentPR) {
+        return null;
+    }
+
+    // ---------------------------------------------------------
+    // RENDER
+    // ---------------------------------------------------------
+
+    return (
+        <SidebarModal
+            isOpen={isOpen}
+            onClose={onClose}
+            title={`PR Tracker: ${currentPR.id ?? currentPR.pr_no ?? ""}`}
+            icon={<FileSpreadsheet className="h-5 w-5 text-white" />}
+        >
+            <div className="-m-6 flex h-[calc(100vh-4rem)] flex-col bg-white">
+                {/* HEADER */}
+                <ProcurementDrawerHeader currentPR={currentPR} />
+
+                {/* STAGE STEPPER */}
+                <ProcurementStageStepper
+                    stages={STAGES}
+                    currentPR={currentPR}
+                />
+
+                {/* TABS */}
+                <ProcurementDrawerTabs
+                    activeTab={activeDrawerTab}
+                    onTabChange={setActiveDrawerTab}
+                    routesCount={currentPR.routes?.length ?? 0}
+                    documentsCount={currentPR.documents?.length ?? 0}
+                />
+
+                {/* BODY */}
+                <div className="flex-1 space-y-6 overflow-y-auto p-6">
+                    {/* STAGE FORMS */}
+                    {activeDrawerTab === "stage_form" && (
+                        <StageFormsTab
+                            currentPR={currentPR}
+                            currentRole={currentRole}
+                            onReceive={handleReceivePR}
+                            handleStageDataChange={handleStageDataChange}
+                            stageFiles={stageFiles}
+                            setStageFiles={setStageFiles}
+                        />
+                    )}
+
+                    {/* ROUTING HISTORY */}
+                    {activeDrawerTab === "routing_history" && (
+                        <RoutingHistoryTab currentPR={currentPR} />
+                    )}
+
+                    {/* DOCUMENTS */}
+                    {activeDrawerTab === "documents" && (
+                        <DocumentsTab currentPR={currentPR} />
+                    )}
+                </div>
+
+                {/* ACTION BAR */}
+                <ProcurementDrawerActionBar
+                    currentPR={currentPR}
+                    stages={STAGES}
+                    onReturn={handleReturnClick}
+                    onForward={handleForwardClick}
+                />
+            </div>
+
+            {/* ROUTING MODAL */}
+            <RoutingModal
+                show={showRoutingModal}
+                onClose={() => setShowRoutingModal(false)}
+                purchaseRequest={currentPR}
+                routingType={routingType}
+                stageFiles={stageFiles}
+                departments={DEPARTMENTS}
+                setStageFiles={setStageFiles}
+                defaultTargetDept={defaultTargetDept}
+                onSuccess={() => {
+                    // Close RoutingModal
+                    setShowRoutingModal(false);
+
+                    // Close ProcurementDrawerModal
+                    onClose?.();
+
+                    // Refresh the procurement list
+                    router.reload({
+                        preserveScroll: true,
+                    });
+                }}
+            />
+        </SidebarModal>
+    );
+}

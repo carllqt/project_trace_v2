@@ -21,6 +21,7 @@ return new class extends Migration
             $table->decimal('abc',15,2)->nullable();
             $table->string('mode_of_procurement')->nullable();
             $table->string('status')->default(Procurement::STAGE_1);
+            $table->date('date_of_implementation')->nullable();
             $table->foreignId('current_department_id')
                 ->nullable()
                 ->constrained('departments')

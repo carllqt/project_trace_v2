@@ -14,7 +14,7 @@ import SidebarModal from "@/components/SidebarModal";
 import CreatePRModal from "@/Pages/Procurement/CreatePRModal";
 import { toast } from "sonner";
 import ProcurementDashboardHeader from "@/Components/Header";
-import ProcurementRegistry from "@/Pages/Procurement/ProcurementRegistry";
+import ProcurementRegistry from "./ProcurementRegistry";
 
 export default function Dashboard({
     departments,

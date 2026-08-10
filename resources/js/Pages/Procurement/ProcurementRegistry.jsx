@@ -11,7 +11,7 @@ import {
 import { PROCUREMENT_STAGES } from "@/constants";
 import DynamicTable from "../../Components/DynamicTable";
 import FilterToggle from "../../Components/FilterButtons/FillterToggle";
-import StatusBadge from "@/Pages/Partials/StatusBadge";
+import StatusBadge from "@/Pages/Procurement/Partials/StatusBadge";
 import axios from "axios";
 import { useState } from "react";
 import ProcurementDrawerModal from "./ProcurementDrawerModal";

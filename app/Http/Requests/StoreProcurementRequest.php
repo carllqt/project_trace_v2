@@ -26,56 +26,51 @@ class StoreProcurementRequest extends FormRequest
                 'max:255',
                 'unique:procurements,pr_no',
             ],
-
             'project_title' => [
                 'required',
                 'string',
                 'max:255',
             ],
-
             'purpose' => [
                 'nullable',
                 'string',
             ],
-
             'end_user' => [
                 'nullable',
                 'string',
                 'max:255',
             ],
-
             'abc' => [
                 'nullable',
                 'numeric',
                 'min:0',
                 'max:9999999999999.99',
             ],
-
             'mode_of_procurement' => [
                 'nullable',
                 'string',
                 'max:255',
             ],
-
             'status' => [
                 'nullable',
                 'in:Preparation of PR,Preparation of RFQ,Preparation of PO,Delivery,Implementation,Payment,Completed',
             ],
-
             'current_department_id' => [
                 'nullable',
                 'integer',
                 'exists:departments,id',
             ],
-
             'documents' => [
                 'nullable',
                 'array',
             ],
-
             'documents.*' => [
                 'file',
                 'max:10240',
+            ],
+            'date_of_implementation' => [
+                'nullable',
+                'date',
             ],
         ];
     }

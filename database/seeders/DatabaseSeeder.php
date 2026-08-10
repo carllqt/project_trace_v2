@@ -22,7 +22,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             DepartmentSeeder::class,
             UserSeeder::class,
-            ProcurementSeeder::class,
+            // ProcurementSeeder::class,
         ]);
 
         $user = User::factory()->create([

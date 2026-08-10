@@ -29,6 +29,9 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'role:user'])->group(function () {
     Route::get('user/dashboard', [DashboardController::class, 'user_dashboard'])->name('dashboard');
 
+    Route::post('/procurement/{procurement}/route', [ProcurementController::class, 'route'])
+    ->name('procurement.route');
+
     Route::resource('procurement', ProcurementController::class);
     // Add more user routes here
 });

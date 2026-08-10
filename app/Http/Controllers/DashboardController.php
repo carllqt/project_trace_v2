@@ -275,7 +275,7 @@ class DashboardController extends Controller
         | Response
         |--------------------------------------------------------------------------
         */
-        return Inertia::render('Dashboard', [
+        return Inertia::render('Procurement/Index', [
             'departments' => Department::pluck(
                 'name',
                 'id'

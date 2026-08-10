@@ -105,8 +105,10 @@ export default function CreatePRModal({
                                 </div>
                             </div>
                             <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
-                                {/* PR Number */}
+                                {" "}
+                                {/* PR Number */}{" "}
                                 <div>
+                                    {" "}
                                     <InputField
                                         label="PR Number"
                                         name="pr_no"
@@ -117,10 +119,8 @@ export default function CreatePRModal({
                                         }
                                         required
                                     />
-
                                     <InputError message={errors.pr_no} />
                                 </div>
-
                                 {/* Project Title */}
                                 <div>
                                     <InputField
@@ -141,7 +141,6 @@ export default function CreatePRModal({
                                         message={errors.project_title}
                                     />
                                 </div>
-
                                 {/* End User Department */}
                                 <div>
                                     <SelectField
@@ -158,7 +157,6 @@ export default function CreatePRModal({
 
                                     <InputError message={errors.end_user} />
                                 </div>
-
                                 {/* ABC */}
                                 <div>
                                     <InputField
@@ -176,6 +174,25 @@ export default function CreatePRModal({
                                     />
 
                                     <InputError message={errors.abc} />
+                                </div>
+                                {/* Date of Implementation */}
+                                <div className="sm:col-span-2">
+                                    <InputField
+                                        label="Date of Implementation"
+                                        name="date_of_implementation"
+                                        type="date"
+                                        value={data.date_of_implementation}
+                                        onChange={(e) =>
+                                            setData(
+                                                "date_of_implementation",
+                                                e.target.value,
+                                            )
+                                        }
+                                    />
+
+                                    <InputError
+                                        message={errors.date_of_implementation}
+                                    />
                                 </div>
                             </div>
                         </div>

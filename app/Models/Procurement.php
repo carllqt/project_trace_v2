@@ -30,6 +30,19 @@ class Procurement extends Model
         self::STAGE_6 => 'Payment Processing',
         self::STAGE_7 => 'Completed',
     ];
+    public static function stageFromNumber(int $stage): string
+    {
+        return match ($stage) {
+            1 => self::STAGE_1,
+            2 => self::STAGE_2,
+            3 => self::STAGE_3,
+            4 => self::STAGE_4,
+            5 => self::STAGE_5,
+            6 => self::STAGE_6,
+            7 => self::STAGE_7,
+            default => self::STAGE_1,
+        };
+    }
 
     protected $fillable = [
         'pr_no',
@@ -38,6 +51,7 @@ class Procurement extends Model
         'end_user',
         'abc',
         'mode_of_procurement',
+        'date_of_implementation',
         'status',
         'current_department_id',
     ];
@@ -179,6 +193,7 @@ class Procurement extends Model
         $latestDelivery = $deliveries->first();
         $implementation = $this->implementation;
         $capa = $this->capa;
+
         /*
         |--------------------------------------------------------------------------
         | Activity Logs
@@ -287,6 +302,8 @@ class Procurement extends Model
                         $this->abc,
                     'mode_of_procurement' =>
                         $this->mode_of_procurement,
+                    'date_of_implementation' =>
+                    $this?->date_of_implementation,
                 ],
                 /*
                 |--------------------------------------------------------------------------
