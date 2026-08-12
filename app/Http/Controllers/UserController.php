@@ -16,12 +16,18 @@ class UserController extends Controller
     {
         $users = User::query()
             ->with([
-                'department',
-                'roles',
+                'department:id,name,code',
+                'roles:id,name',
             ])
             ->latest()
             ->paginate(10)
             ->withQueryString();
+
+        // Map through the page items and hide pivot from roles
+        $users->through(function ($user) {
+            $user->roles->makeHidden('pivot');
+            return $user;
+        });
 
         return Inertia::render('Admin/User/Index', [
             'users' => $users,
