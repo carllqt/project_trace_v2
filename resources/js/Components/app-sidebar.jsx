@@ -1,11 +1,14 @@
-import { Link } from "@inertiajs/react";
+import { Link, usePage } from "@inertiajs/react";
 import {
     CheckCircle2Icon,
     ChevronDownIcon,
+    ClipboardCheckIcon,
     Clock3Icon,
     FileTextIcon,
+    HistoryIcon,
     HomeIcon,
     Layers3Icon,
+    User,
     UserRoundCheckIcon,
 } from "lucide-react";
 
@@ -19,35 +22,69 @@ import {
 } from "@/components/ui/sidebar";
 import { SidebarLogout } from "./SidebarLogout";
 
-const navItems = [
-    {
-        title: "Dashboard",
-        href: route("dashboard"),
-        icon: HomeIcon,
-        active: true,
-    },
-    {
-        title: "My Action Queue",
-        href: "#",
-        icon: Clock3Icon,
-    },
-    {
-        title: "In Progress PRs",
-        href: "#",
-        icon: FileTextIcon,
-        badge: "2",
-    },
-    {
-        title: "Completed PRs",
-        href: "#",
-        icon: CheckCircle2Icon,
-    },
-];
-
 const navLinkBaseClass =
     "flex h-9 w-full items-center justify-start gap-2 rounded-2xl px-3.5 text-xs font-extrabold";
 
 export function AppSidebar({ ...props }) {
+    const userNavItems = [
+        {
+            title: "Dashboard",
+            href: route("dashboard"),
+            icon: HomeIcon,
+            active: true,
+        },
+        {
+            title: "My Action Queue",
+            href: "#",
+            icon: Clock3Icon,
+        },
+        {
+            title: "In Progress PRs",
+            href: "#",
+            icon: FileTextIcon,
+        },
+        {
+            title: "Completed PRs",
+            href: "#",
+            icon: CheckCircle2Icon,
+        },
+    ];
+
+    const adminNavItems = [
+        {
+            title: "Dashboard",
+            href: route("admin.dashboard"),
+            icon: HomeIcon,
+            active: true,
+        },
+        {
+            title: "All Procurements",
+            href: "#",
+            icon: FileTextIcon,
+        },
+        {
+            title: "User",
+            href: route("user.index"),
+            icon: User,
+        },
+        {
+            title: "History",
+            href: "#",
+            icon: HistoryIcon,
+        },
+        {
+            title: "CAPA",
+            href: "#",
+            icon: ClipboardCheckIcon,
+        },
+    ];
+
+    const user = usePage().props.auth.user;
+
+    const isAdmin = user?.roles?.some((role) => role.name === "admin") ?? false;
+    const isUser = user?.roles?.some((role) => role.name === "user") ?? false;
+
+    const navItems = isAdmin ? adminNavItems : userNavItems;
     return (
         <Sidebar
             variant="sidebar"

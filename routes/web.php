@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProcurementController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -23,8 +24,9 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::middleware(['auth', 'role:user'])->group(function () {
+Route::middleware(['auth', 'role:user|admin'])->group(function () {
     Route::get('user/dashboard', [DashboardController::class, 'user_dashboard'])->name('dashboard');
+    Route::get('admin/dashboard', [DashboardController::class, 'admin_dashboard'])->name('admin.dashboard');
 
     Route::post('/procurement/{procurement}/route', [ProcurementController::class, 'route'])
     ->name('procurement.route');
@@ -34,6 +36,7 @@ Route::middleware(['auth', 'role:user'])->group(function () {
     )->name('procurement.retrieve');
 
     Route::resource('procurement', ProcurementController::class);
+    Route::resource('user', UserController::class);
     // Add more user routes here
 });
 
