@@ -55,7 +55,7 @@ export default function UserFormModal({
         e.preventDefault();
 
         if (isEdit) {
-            put(route("users.update", user.id), {
+            put(route("user.update", user.id), {
                 preserveScroll: true,
                 onSuccess: () => {
                     reset();

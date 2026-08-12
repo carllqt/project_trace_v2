@@ -9,7 +9,7 @@ export default function DeleteUserModal({ open, onClose, user = null }) {
     if (!open || !user) return null;
 
     const handleDelete = () => {
-        destroy(route("admin.users.destroy", user.id), {
+        destroy(route("user.destroy", user.id), {
             preserveScroll: true,
 
             onSuccess: () => {
