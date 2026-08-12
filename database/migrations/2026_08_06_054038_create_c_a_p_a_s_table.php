@@ -15,14 +15,14 @@ return new class extends Migration
 
             $table->id();
 
-            $table->foreignId('procurement_id')
-                ->unique()
-                ->constrained()
-                ->cascadeOnDelete();
-
-            $table->date('calendar_of_activities')->nullable();
+            $table->date('date')->nullable();
+            $table->text('activity')->nullable();
+            $table->text('participants')->nullable();
+            $table->string('lead_division')->nullable();
+            $table->string('venue')->nullable();
+            $table->text('remarks')->nullable();
+            
             $table->timestamps();
-
         });
     }
 
@@ -31,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('c_a_p_a_s');
+        Schema::dropIfExists('capas');
     }
 };

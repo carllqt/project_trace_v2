@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\CAPAController;
 use App\Http\Controllers\ProcurementController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
@@ -37,6 +38,14 @@ Route::middleware(['auth', 'role:user|admin'])->group(function () {
 
     Route::resource('procurement', ProcurementController::class);
     Route::resource('user', UserController::class);
+
+    
+    Route::get('/capa', [CAPAController::class, 'index'])->name('capa.index');
+    Route::get('/capa-management', [CAPAController::class, 'management'])->name('capa.management');
+    Route::post('/capa', [CAPAController::class, 'store'])->name('capa.store');
+    Route::post('/capa/import', [CAPAController::class, 'import'])->name('capa.import');
+    Route::put('/capa/{cAPA}', [CAPAController::class, 'update'])->name('capa.update');
+    Route::delete('/capa/{cAPA}', [CAPAController::class, 'destroy'])->name('capa.destroy');
     // Add more user routes here
 });
 

@@ -3,6 +3,7 @@ import {
     CheckCircle2Icon,
     ChevronDownIcon,
     ClipboardCheckIcon,
+    CalendarDaysIcon,
     Clock3Icon,
     FileTextIcon,
     HistoryIcon,
@@ -26,6 +27,7 @@ const navLinkBaseClass =
     "flex h-9 w-full items-center justify-start gap-2 rounded-2xl px-3.5 text-xs font-extrabold";
 
 export function AppSidebar({ ...props }) {
+    const currentUrl = usePage().url;
     const userNavItems = [
         {
             title: "Dashboard",
@@ -47,6 +49,11 @@ export function AppSidebar({ ...props }) {
             title: "Completed PRs",
             href: "#",
             icon: CheckCircle2Icon,
+        },
+        {
+            title: "CAPA",
+            href: route("capa.index"),
+            icon: CalendarDaysIcon,
         },
     ];
 
@@ -74,7 +81,12 @@ export function AppSidebar({ ...props }) {
         },
         {
             title: "CAPA",
-            href: "#",
+            href: route("capa.index"),
+            icon: CalendarDaysIcon,
+        },
+        {
+            title: "CAPA Management",
+            href: route("capa.management"),
             icon: ClipboardCheckIcon,
         },
     ];
@@ -109,6 +121,7 @@ export function AppSidebar({ ...props }) {
                 <SidebarMenu className="w-full gap-2">
                     {navItems.map((item) => {
                         const Icon = item.icon;
+                        const isActive = item.href !== "#" && currentUrl.split("?")[0] === new URL(item.href, window.location.origin).pathname;
 
                         return (
                             <SidebarMenuItem
@@ -118,7 +131,7 @@ export function AppSidebar({ ...props }) {
                                 <Link
                                     href={item.href}
                                     className={
-                                        item.active
+                                        isActive
                                             ? `${navLinkBaseClass} bg-blue-700 text-white shadow-lg shadow-blue-700/25 [&_svg]:text-white`
                                             : `${navLinkBaseClass} text-slate-700 hover:bg-blue-50 hover:text-blue-700 [&_svg]:text-slate-400`
                                     }
