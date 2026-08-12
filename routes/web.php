@@ -35,6 +35,8 @@ Route::middleware(['auth', 'role:user|admin'])->group(function () {
         [ProcurementController::class, 'retrieve']
     )->name('procurement.retrieve');
 
+    Route::put('/users/{user}/reset-password',[UserController::class, 'resetPassword'])->name('admin.users.reset-password');
+
     Route::resource('procurement', ProcurementController::class);
     Route::resource('user', UserController::class);
     // Add more user routes here
