@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CAPA extends Model
 {
@@ -13,12 +12,18 @@ class CAPA extends Model
     protected $table = 'capas';
 
     protected $fillable = [
-        'procurement_id',
-        'calendar_of_activities',
+        'date',
+        'activity',
+        'participants',
+        'lead_division',
+        'venue',
+        'remarks',
     ];
 
-    public function procurement(): BelongsTo
+    protected function casts(): array
     {
-        return $this->belongsTo(Procurement::class);
+        return [
+            'date' => 'date:Y-m-d',
+        ];
     }
 }
