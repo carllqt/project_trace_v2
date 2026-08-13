@@ -14,14 +14,17 @@ return new class extends Migration
         Schema::create('capas', function (Blueprint $table) {
 
             $table->id();
-
+            $table->foreignId('procurement_id')
+                ->unique()
+                ->constrained()
+                ->cascadeOnDelete();
             $table->date('date')->nullable();
             $table->text('activity')->nullable();
             $table->text('participants')->nullable();
             $table->string('lead_division')->nullable();
             $table->string('venue')->nullable();
             $table->text('remarks')->nullable();
-            
+
             $table->timestamps();
         });
     }

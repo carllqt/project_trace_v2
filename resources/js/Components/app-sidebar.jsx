@@ -65,19 +65,19 @@ export function AppSidebar({ ...props }) {
             active: true,
         },
         {
-            title: "All Procurements",
-            href: "#",
-            icon: FileTextIcon,
+            title: "Procurement Records",
+            href: route("procurement.index"),
+            icon: HistoryIcon,
         },
         {
-            title: "User",
+            title: "Routing History",
+            href: route("route.index"),
+            icon: HistoryIcon,
+        },
+        {
+            title: "User Management",
             href: route("user.index"),
             icon: User,
-        },
-        {
-            title: "History",
-            href: "#",
-            icon: HistoryIcon,
         },
         {
             title: "CAPA",
@@ -121,7 +121,11 @@ export function AppSidebar({ ...props }) {
                 <SidebarMenu className="w-full gap-2">
                     {navItems.map((item) => {
                         const Icon = item.icon;
-                        const isActive = item.href !== "#" && currentUrl.split("?")[0] === new URL(item.href, window.location.origin).pathname;
+                        const isActive =
+                            item.href !== "#" &&
+                            currentUrl.split("?")[0] ===
+                                new URL(item.href, window.location.origin)
+                                    .pathname;
 
                         return (
                             <SidebarMenuItem

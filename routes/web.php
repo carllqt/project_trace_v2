@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CAPAController;
 use App\Http\Controllers\ProcurementController;
+use App\Http\Controllers\ProcurementRouteController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -40,8 +41,9 @@ Route::middleware(['auth', 'role:user|admin'])->group(function () {
 
     Route::resource('procurement', ProcurementController::class);
     Route::resource('user', UserController::class);
+    Route::resource('route', ProcurementRouteController::class);
 
-    
+
     Route::get('/capa', [CAPAController::class, 'index'])->name('capa.index');
     Route::get('/capa-management', [CAPAController::class, 'management'])->name('capa.management');
     Route::post('/capa', [CAPAController::class, 'store'])->name('capa.store');

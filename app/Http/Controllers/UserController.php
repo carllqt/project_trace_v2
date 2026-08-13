@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
 use App\Models\Department;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -51,62 +53,9 @@ class UserController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreUserRequest $request)
     {
-        $validated = $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'min:2',
-                'max:255',
-            ],
-            'email' => [
-                'required',
-                'string',
-                'email',
-                'max:255',
-                'unique:users,email',
-            ],
-            'department_id' => [
-                'required',
-                'integer',
-                'exists:departments,id',
-            ],
-            'position' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-            'role' => [
-                'required',
-                'string',
-                Rule::in(['user', 'admin']),
-            ],
-            'is_head' => [
-                'nullable',
-                'boolean',
-            ],
-            'password' => [
-                'required',
-                'string',
-                'min:8',
-                'max:255',
-                'confirmed',
-            ],
-        ], [
-            'name.required' => 'Please enter the user\'s full name.',
-            'name.min' => 'The name must be at least 2 characters.',
-            'email.required' => 'Please enter an email address.',
-            'email.email' => 'Please enter a valid email address.',
-            'email.unique' => 'This email address is already registered.',
-            'department_id.required' => 'Please select a department.',
-            'department_id.exists' => 'The selected department does not exist.',
-            'role.required' => 'Please select a system role.',
-            'role.in' => 'The selected role is invalid.',
-            'password.required' => 'Please enter a password.',
-            'password.min' => 'The password must be at least 8 characters.',
-            'password.confirmed' => 'The password confirmation does not match.',
-        ]);
+        $validated = $request->validated();
         try {
             DB::transaction(function () use ($validated) {
                 $user = User::create([
@@ -151,61 +100,9 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, User $user)
+    public function update(UpdateUserRequest $request, User $user)
     {
-        $validated = $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'min:2',
-                'max:255',
-            ],
-            'email' => [
-                'required',
-                'string',
-                'email',
-                'max:255',
-                Rule::unique('users', 'email')->ignore($user->id),
-            ],
-            'department_id' => [
-                'required',
-                'integer',
-                'exists:departments,id',
-            ],
-            'position' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-            'role' => [
-                'required',
-                'string',
-                Rule::in(['user', 'admin']),
-            ],
-            'is_head' => [
-                'nullable',
-                'boolean',
-            ],
-            'password' => [
-                'nullable',
-                'string',
-                'min:8',
-                'max:255',
-                'confirmed',
-            ],
-        ], [
-            'name.required' => 'Please enter the user\'s full name.',
-            'name.min' => 'The name must be at least 2 characters.',
-            'email.required' => 'Please enter an email address.',
-            'email.email' => 'Please enter a valid email address.',
-            'email.unique' => 'This email address is already registered.',
-            'department_id.required' => 'Please select a department.',
-            'department_id.exists' => 'The selected department does not exist.',
-            'role.required' => 'Please select a system role.',
-            'role.in' => 'The selected role is invalid.',
-            'password.min' => 'The password must be at least 8 characters.',
-            'password.confirmed' => 'The password confirmation does not match.',
-        ]);
+         $validated = $request->validated();
         try {
             DB::transaction(function () use ($validated, $user) {
                 $userData = [

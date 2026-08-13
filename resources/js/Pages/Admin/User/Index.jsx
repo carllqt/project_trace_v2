@@ -230,7 +230,7 @@ export default function Dashboard({ users, departments, queryParams = {} }) {
                     queryParams={queryParams}
                     visibleFilters={["department", "role"]}
                     departments={departments}
-                    clearRouteName="dashboard"
+                    clearRouteName="user.index"
                 />
 
                 {/* User Registry */}
