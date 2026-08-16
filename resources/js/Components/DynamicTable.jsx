@@ -13,9 +13,9 @@ export default function DynamicTable({
     rowKey = "id",
 }) {
     return (
-        <div className="overflow-hidden rounded-3xl border border-white/80 bg-white/70 shadow-[0_8px_30px_rgba(0,0,0,0.03)] backdrop-blur-xl">
+        <div className="min-w-0 overflow-hidden rounded-3xl border border-white/80 bg-white/70 shadow-[0_8px_30px_rgba(0,0,0,0.03)] backdrop-blur-xl">
             {/* Table */}
-            <div className="overflow-x-auto">
+            <div className="w-full max-w-full overflow-x-auto">
                 <table className="w-full border-collapse text-left">
                     <thead>
                         <tr className="border-b border-slate-100 bg-slate-50/60 text-[11px] font-bold uppercase tracking-wider text-slate-400">

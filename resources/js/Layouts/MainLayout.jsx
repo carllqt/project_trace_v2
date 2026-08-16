@@ -7,8 +7,10 @@ export default function MainLayout({ children }) {
         <SidebarProvider style={{ "--sidebar-width": "252px" }}>
             <Toaster richColors />
             <AppSidebar />
-            <SidebarInset className="bg-slate-50">
-                <main className="min-w-0 bg-gray-100">{children}</main>
+            <SidebarInset className="min-w-0 overflow-x-hidden bg-slate-50">
+                <main className="min-w-0 overflow-x-hidden bg-gray-100">
+                    {children}
+                </main>
             </SidebarInset>
         </SidebarProvider>
     );

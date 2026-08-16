@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\CAPA;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -9,10 +10,28 @@ class CAPAController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
+        $canManage = $request->user()?->hasRole('admin') ?? false;
+        $calendarMonth = $request->string('month')->toString();
+
+        if (! preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $calendarMonth)) {
+            $calendarMonth = now()->format('Y-m');
+        }
+
+        $monthStart = CarbonImmutable::createFromFormat('Y-m-d', $calendarMonth.'-01')->startOfMonth();
+
         return Inertia::render('CAPA/Calendar', [
-            'activities' => CAPA::query()->orderBy('date')->get(),
+            'activities' => $canManage
+                ? CAPA::query()->orderBy('date')->paginate(5)->withQueryString()
+                : null,
+            'calendarActivities' => CAPA::query()
+                ->select(['id', 'date', 'activity'])
+                ->whereBetween('date', [$monthStart, $monthStart->endOfMonth()])
+                ->orderBy('date')
+                ->get(),
+            'calendarMonth' => $calendarMonth,
+            'canManage' => $canManage,
         ]);
     }
 
@@ -20,9 +39,18 @@ class CAPAController extends Controller
     {
         abort_unless(auth()->user()?->hasRole('admin'), 403);
 
-        return Inertia::render('CAPA/Management', [
-            'activities' => CAPA::query()->latest('date')->latest('id')->get(),
-        ]);
+        return redirect()->route('capa.index');
+    }
+
+    public function downloadTemplate(Request $request)
+    {
+        abort_unless($request->user()?->hasRole('admin'), 403);
+
+        $path = public_path('templates/capa_template.xlsx');
+
+        abort_unless(is_file($path), 404);
+
+        return response()->download($path, 'capa_template.xlsx');
     }
     /**
      * Show the form for creating a new resource.
