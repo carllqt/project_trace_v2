@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             DepartmentSeeder::class,
             UserSeeder::class,
             ProcurementSeeder::class,
+                ProcurementRouteSeeder::class,
         ]);
 
         $user = User::factory()->create([

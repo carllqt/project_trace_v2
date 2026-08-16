@@ -200,14 +200,23 @@ export default function ProcurementRegistry({
             <StatusBadge completed={procurement.is_completed} />
         ),
         actions: (procurement) => (
-            <button
-                type="button"
-                onClick={() => handleViewProcurement(procurement.id)}
-                title="View procurement"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-blue-50 hover:text-blue-600"
-            >
-                <Eye className="h-4 w-4" />
-            </button>
+            <div className="flex items-center justify-end">
+                <button
+                    type="button"
+                    onClick={() => handleViewProcurement(procurement.id)}
+                    title={`View procurement ${procurement.pr_no}`}
+                    aria-label={`View procurement ${procurement.pr_no}`}
+                    className="group inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200/80 bg-white px-3 text-slate-500 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 hover:shadow-[0_4px_12px_rgba(37,99,235,0.10)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:ring-offset-1 active:translate-y-0"
+                >
+                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100/80 transition-all duration-200 group-hover:bg-blue-100 group-hover:text-blue-600">
+                        <Eye className="h-3.5 w-3.5 transition-transform duration-200 group-hover:scale-110" />
+                    </span>
+
+                    <span className="text-[11px] font-bold tracking-wide">
+                        View Details
+                    </span>
+                </button>
+            </div>
         ),
     };
     return (

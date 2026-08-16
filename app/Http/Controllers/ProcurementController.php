@@ -15,15 +15,411 @@ use App\Models\Payment;
 use App\Models\ProcurementPr;
 use App\Models\ProcurementRfq;
 use App\Models\PurchaseOrder;
+use Inertia\Inertia;
 use Throwable;
 class ProcurementController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $queryParams = $request->query();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Base Query
+        |--------------------------------------------------------------------------
+        | Admin can see ALL procurements.
+        | Filters are applied only when provided.
+        |--------------------------------------------------------------------------
+        */
+        $filteredQuery = Procurement::query()
+
+            /*
+            |--------------------------------------------------------------------------
+            | Search
+            |--------------------------------------------------------------------------
+            */
+            ->when(
+                $request->filled('search'),
+                function ($query) use ($request) {
+                    $search = trim($request->input('search'));
+
+                    $query->where(function ($query) use ($search) {
+                        $query
+                            ->where('pr_no', 'like', "%{$search}%")
+                            ->orWhere(
+                                'project_title',
+                                'like',
+                                "%{$search}%"
+                            )
+                            ->orWhere(
+                                'purpose',
+                                'like',
+                                "%{$search}%"
+                            )
+                            ->orWhere(
+                                'end_user',
+                                'like',
+                                "%{$search}%"
+                            )
+                            ->orWhere(
+                                'mode_of_procurement',
+                                'like',
+                                "%{$search}%"
+                            );
+                    });
+                }
+            )
+
+            /*
+            |--------------------------------------------------------------------------
+            | Current Department Filter
+            |--------------------------------------------------------------------------
+            */
+            ->when(
+                $request->filled('department'),
+                function ($query) use ($request) {
+                    $query->where(
+                        'current_department_id',
+                        $request->input('department')
+                    );
+                }
+            )
+
+            /*
+            |--------------------------------------------------------------------------
+            | Status / Stage Filter
+            |--------------------------------------------------------------------------
+            */
+            ->when(
+                $request->filled('status'),
+                function ($query) use ($request) {
+                    $query->where(
+                        'status',
+                        $request->input('status')
+                    );
+                }
+            )
+
+            /*
+            |--------------------------------------------------------------------------
+            | Queue Filter
+            |--------------------------------------------------------------------------
+            */
+            ->when(
+                $request->filled('queue'),
+                function ($query) use ($request) {
+
+                    match ($request->input('queue')) {
+
+                        'in_progress' => $query->where(
+                            'status',
+                            '!=',
+                            Procurement::STAGE_7
+                        ),
+
+                        'completed' => $query->where(
+                            'status',
+                            Procurement::STAGE_7
+                        ),
+
+                        default => null,
+                    };
+                }
+            );
+
+        /*
+        |--------------------------------------------------------------------------
+        | KPI Statistics
+        |--------------------------------------------------------------------------
+        | These statistics respect the currently selected filters.
+        |--------------------------------------------------------------------------
+        */
+        $stats = [
+            'total' => (clone $filteredQuery)->count(),
+
+            'inProgress' => (clone $filteredQuery)
+                ->where(
+                    'status',
+                    '!=',
+                    Procurement::STAGE_7
+                )
+                ->count(),
+
+            'completed' => (clone $filteredQuery)
+                ->where(
+                    'status',
+                    Procurement::STAGE_7
+                )
+                ->count(),
+
+            /*
+            | Admin has no personal department queue.
+            */
+            'myQueue' => 0,
+        ];
+
+        /*
+        |--------------------------------------------------------------------------
+        | Procurements
+        |--------------------------------------------------------------------------
+        */
+        $procurements = (clone $filteredQuery)
+            ->with([
+                'currentDepartment',
+
+                'latestRoute.fromDepartment',
+                'latestRoute.toDepartment',
+                'latestRoute.forwardedBy',
+                'latestRoute.receivedBy',
+
+                'routes.fromDepartment',
+                'routes.toDepartment',
+                'routes.forwardedBy',
+                'routes.receivedBy',
+
+                'activityLogs',
+                'documents',
+            ])
+            ->latest('created_at')
+            ->paginate(10)
+            ->withQueryString();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Transform Procurement Data
+        |--------------------------------------------------------------------------
+        */
+        $procurements->through(function ($procurement) {
+
+            $stageNumber = (int) str_replace(
+                'stage_',
+                '',
+                $procurement->status
+            );
+
+            $isCompleted =
+                $procurement->status === Procurement::STAGE_7;
+
+            $latestRoute = $procurement->latestRoute;
+
+            return [
+
+                /*
+                |--------------------------------------------------------------------------
+                | Basic Procurement Information
+                |--------------------------------------------------------------------------
+                */
+                'id' =>
+                    $procurement->id,
+
+                'pr_no' =>
+                    $procurement->pr_no,
+
+                'project_title' =>
+                    $procurement->project_title,
+
+                'purpose' =>
+                    $procurement->purpose,
+
+                'end_user' =>
+                    $procurement->end_user,
+
+                'abc' =>
+                    $procurement->abc,
+
+                'mode_of_procurement' =>
+                    $procurement->mode_of_procurement,
+
+                /*
+                |--------------------------------------------------------------------------
+                | Status
+                |--------------------------------------------------------------------------
+                */
+                'stage' =>
+                    $stageNumber,
+
+                'status' =>
+                    $procurement->status,
+
+                'route_status' =>
+                    $isCompleted
+                        ? 'completed'
+                        : 'in_route',
+
+                'is_in_progress' =>
+                    !$isCompleted,
+
+                'is_completed' =>
+                    $isCompleted,
+
+                /*
+                |--------------------------------------------------------------------------
+                | Admin does not have a personal queue
+                |--------------------------------------------------------------------------
+                */
+                'requires_my_action' =>
+                    false,
+
+                /*
+                |--------------------------------------------------------------------------
+                | Current Department
+                |--------------------------------------------------------------------------
+                */
+                'current_department' =>
+                    $procurement->currentDepartment?->name,
+
+                'current_department_id' =>
+                    $procurement->current_department_id,
+
+                /*
+                |--------------------------------------------------------------------------
+                | Stage Data
+                |--------------------------------------------------------------------------
+                */
+                'stage_data' =>
+                    $procurement->stage_data,
+
+                /*
+                |--------------------------------------------------------------------------
+                | Latest Route
+                |--------------------------------------------------------------------------
+                */
+                'route' => $latestRoute
+                    ? [
+                        'id' =>
+                            $latestRoute->id,
+
+                        'from_department' =>
+                            $latestRoute->fromDepartment?->name,
+
+                        'to_department' =>
+                            $latestRoute->toDepartment?->name,
+
+                        'forwarded_by' =>
+                            $latestRoute->forwardedBy?->name,
+
+                        'received_by' =>
+                            $latestRoute->receivedBy?->name,
+
+                        'stage' =>
+                            $latestRoute->stage,
+
+                        'action' =>
+                            $latestRoute->action,
+
+                        'remarks' =>
+                            $latestRoute->remarks,
+
+                        'forwarded_at' =>
+                            $latestRoute->forwarded_at,
+
+                        'received_at' =>
+                            $latestRoute->received_at,
+                    ]
+                    : null,
+
+                /*
+                |--------------------------------------------------------------------------
+                | Complete Routing History
+                |--------------------------------------------------------------------------
+                */
+                'routes' =>
+                    $procurement->routes
+                        ->sortBy('created_at')
+                        ->values()
+                        ->map(function ($route) {
+
+                            return [
+                                'id' =>
+                                    $route->id,
+
+                                'action' =>
+                                    $route->action,
+
+                                'from_dept' =>
+                                    $route->fromDepartment?->name,
+
+                                'to_dept' =>
+                                    $route->toDepartment?->name,
+
+                                'forwarded_at' =>
+                                    $route->forwarded_at,
+
+                                'received_at' =>
+                                    $route->received_at,
+
+                                'forwarded_by' =>
+                                    $route->forwardedBy?->name,
+
+                                'received_by' =>
+                                    $route->receivedBy?->name,
+
+                                'remarks' =>
+                                    $route->remarks,
+
+                                'stage' =>
+                                    $route->stage,
+                            ];
+                        })
+                        ->values(),
+
+                /*
+                |--------------------------------------------------------------------------
+                | Activity Logs
+                |--------------------------------------------------------------------------
+                */
+                'activity_logs' =>
+                    $procurement->activityLogs
+                        ->values()
+                        ->map(function ($log) {
+                            return $log->toArray();
+                        }),
+
+                /*
+                |--------------------------------------------------------------------------
+                | Documents
+                |--------------------------------------------------------------------------
+                */
+                'documents' =>
+                    $procurement->documents
+                        ->values()
+                        ->map(function ($document) {
+                            return $document->toArray();
+                        }),
+            ];
+        });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Departments
+        |--------------------------------------------------------------------------
+        */
+        $departments = Department::query()
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->toArray();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Response
+        |--------------------------------------------------------------------------
+        */
+        return Inertia::render('Admin/Procurement/Index', [
+            'departments' =>
+                $departments,
+
+            'procurements' =>
+                $procurements,
+
+            'stats' =>
+                $stats,
+
+            'queryParams' =>
+                $queryParams,
+        ]);
     }
     /**
      * Show the form for creating a new resource.

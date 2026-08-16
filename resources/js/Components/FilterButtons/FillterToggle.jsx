@@ -6,6 +6,7 @@ import SelectField from "@/components/SelectField";
 import useSearch from "@/hooks/useSearch";
 import { PROCUREMENT_STAGES } from "@/constants";
 import { useState } from "react";
+import { Input } from "../ui/input";
 
 export default function FilterToggle({
     queryParams = {},
@@ -14,8 +15,6 @@ export default function FilterToggle({
     clearRouteParams = {},
     departments = {},
     statuses = {},
-    vehicle_types = {},
-    puroks = {},
 }) {
     const search = useSearch(clearRouteName, queryParams);
 
@@ -160,6 +159,68 @@ export default function FilterToggle({
                                     {
                                         value: "",
                                         label: "All Departments",
+                                    },
+                                    ...Object.entries(departments).map(
+                                        ([id, name]) => ({
+                                            value: String(id),
+                                            label: name,
+                                        }),
+                                    ),
+                                ]}
+                            />
+                        </div>
+                    )}
+                    {visibleFilters.includes("date") && (
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <div>
+                                <label className="mb-1.5 block text-xs font-semibold text-slate-500">
+                                    From Date
+                                </label>
+
+                                <Input
+                                    type="date"
+                                    value={queryParams.date_from ?? ""}
+                                    onChange={(e) =>
+                                        searchFieldName(
+                                            "date_from",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className="rounded-xl border-slate-200 bg-white/70"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="mb-1.5 block text-xs font-semibold text-slate-500">
+                                    To Date
+                                </label>
+
+                                <Input
+                                    type="date"
+                                    value={queryParams.date_to ?? ""}
+                                    onChange={(e) =>
+                                        searchFieldName(
+                                            "date_to",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className="rounded-xl border-slate-200 bg-white/70"
+                                />
+                            </div>
+                        </div>
+                    )}
+                    {isVisible("origin_department") && (
+                        <div className="min-w-[200px] flex-1 sm:max-w-[280px]">
+                            <SelectField
+                                name="origin_department"
+                                label="Origin Department"
+                                value={queryParams.origin_department ?? ""}
+                                onChange={handleChange("origin_department")}
+                                placeholder="All Origin Departments"
+                                options={[
+                                    {
+                                        value: "",
+                                        label: "All Origin Departments",
                                     },
                                     ...Object.entries(departments).map(
                                         ([id, name]) => ({

@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CAPAController;
 use App\Http\Controllers\ProcurementController;
+use App\Http\Controllers\ProcurementRouteController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -36,10 +37,13 @@ Route::middleware(['auth', 'role:user|admin'])->group(function () {
         [ProcurementController::class, 'retrieve']
     )->name('procurement.retrieve');
 
+    Route::put('/users/{user}/reset-password',[UserController::class, 'resetPassword'])->name('admin.users.reset-password');
+
     Route::resource('procurement', ProcurementController::class);
     Route::resource('user', UserController::class);
+    Route::resource('route', ProcurementRouteController::class);
 
-    
+
     Route::get('/capa', [CAPAController::class, 'index'])->name('capa.index');
     Route::get('/capa-management', [CAPAController::class, 'management'])->name('capa.management');
     Route::get('/capa/template/download', [CAPAController::class, 'downloadTemplate'])->name('capa.template');

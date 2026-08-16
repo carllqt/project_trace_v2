@@ -89,6 +89,10 @@ class Procurement extends Model
     {
         return $this->hasOne(CAPA::class);
     }
+    public function capas()
+    {
+        return $this->hasMany(Capa::class);
+    }
     public function documents(): HasMany
     {
         return $this->hasMany(ProcurementDocument::class);

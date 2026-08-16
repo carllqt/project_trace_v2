@@ -9,11 +9,18 @@ import DynamicTable from "@/Components/DynamicTable";
 
 import { Button } from "@/Components/ui/button";
 import FilterToggle from "@/Components/FilterButtons/FillterToggle";
+import UserFormModal from "./Partials/UserFormModal";
+import ResetPasswordModal from "./Partials/ResetPasswordModal";
+import DeleteUserModal from "./Partials/resources/js/Pages/Admin/Users/DeleteUserModal";
 
 export default function Dashboard({ users, departments, queryParams = {} }) {
     const { flash } = usePage().props;
 
     const [selectedUser, setSelectedUser] = useState(null);
+    const [showUserModal, setShowUserModal] = useState(false);
+    const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     useEffect(() => {
         if (flash?.success) {
@@ -40,19 +47,17 @@ export default function Dashboard({ users, departments, queryParams = {} }) {
 
     const handleEdit = (user) => {
         setSelectedUser(user);
-
-        // Open your edit modal here
-        console.log("Edit user:", user);
+        setShowUserModal(true);
     };
 
     const handleResetPassword = (user) => {
-        // Open reset password confirmation/modal here
-        console.log("Reset password:", user);
+        setSelectedUser(user);
+        setShowResetPasswordModal(true);
     };
 
     const handleDelete = (user) => {
-        // Open delete confirmation/modal here
-        console.log("Delete user:", user);
+        setSelectedUser(user);
+        setShowDeleteModal(true);
     };
     /*
     |--------------------------------------------------------------------------
@@ -179,20 +184,28 @@ export default function Dashboard({ users, departments, queryParams = {} }) {
 
             <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-7">
                 {/* Header */}
-                <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/20">
-                            <Users className="h-5 w-5 text-white" />
+                <div className="mb-7 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                    {/* Header Information */}
+                    <div className="flex items-start gap-4">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50">
+                            <Users className="h-5 w-5 text-blue-600" />
                         </div>
 
                         <div>
-                            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
-                                User Management
-                            </h1>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+                                    User Management
+                                </h1>
 
-                            <p className="mt-1 text-sm text-slate-500">
-                                Manage system users, departments, roles, and
-                                account access.
+                                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                    Administration
+                                </span>
+                            </div>
+
+                            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-500">
+                                Manage user accounts, roles, department
+                                assignments, and access permissions across the
+                                system.
                             </p>
                         </div>
                     </div>
@@ -200,8 +213,12 @@ export default function Dashboard({ users, departments, queryParams = {} }) {
                     {/* Add User */}
                     <Button
                         type="button"
-                        className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md transition-all hover:-translate-y-0.5 hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg sm:w-auto"
-                        onClick={() => setSelectedUser({ mode: "add" })}
+                        variant="outline"
+                        className="h-10 w-full rounded-xl border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 sm:w-auto"
+                        onClick={() => {
+                            setSelectedUser(null);
+                            setShowUserModal(true);
+                        }}
                     >
                         <UserPlus className="mr-2 h-4 w-4" />
                         Add User
@@ -213,7 +230,7 @@ export default function Dashboard({ users, departments, queryParams = {} }) {
                     queryParams={queryParams}
                     visibleFilters={["department", "role"]}
                     departments={departments}
-                    clearRouteName="dashboard"
+                    clearRouteName="user.index"
                 />
 
                 {/* User Registry */}
@@ -245,6 +262,33 @@ export default function Dashboard({ users, departments, queryParams = {} }) {
                         onRowClick={(user) => setSelectedUser(user)}
                     />
                 </div>
+                <UserFormModal
+                    open={showUserModal}
+                    onClose={() => {
+                        setShowUserModal(false);
+                        setSelectedUser(null);
+                    }}
+                    user={selectedUser}
+                    departments={departments}
+                />
+
+                <ResetPasswordModal
+                    open={showResetPasswordModal}
+                    onClose={() => {
+                        setShowResetPasswordModal(false);
+                        setSelectedUser(null);
+                    }}
+                    user={selectedUser}
+                />
+
+                <DeleteUserModal
+                    open={showDeleteModal}
+                    onClose={() => {
+                        setShowDeleteModal(false);
+                        setSelectedUser(null);
+                    }}
+                    user={selectedUser}
+                />
             </div>
         </MainLayout>
     );
