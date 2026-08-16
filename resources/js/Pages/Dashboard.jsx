@@ -77,7 +77,7 @@ export default function Dashboard({
             <BreadCrumbsHeader breadcrumbs={breadcrumbs} />
 
             <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-7">
-                <div className="w-full space-y-6">
+                <div className="min-w-0 space-y-6">
                     {/* <pre>{JSON.stringify(procurements, undefined, 2)}</pre> */}
                     <ProcurementDashboardHeader
                         stats={stats}

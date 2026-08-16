@@ -1,5 +1,5 @@
 import { Head, router, useForm, usePage } from "@inertiajs/react";
-import { CalendarPlus, ClipboardList, FileSpreadsheet, Pencil, Plus, Save, Trash2, Upload, X } from "lucide-react";
+import { CalendarPlus, ClipboardList, Download, FileSpreadsheet, Pencil, Plus, Save, Trash2, Upload, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
@@ -7,6 +7,7 @@ import BreadCrumbsHeader from "@/Components/BreadcrumbsHeader";
 import MainLayout from "@/Layouts/MainLayout";
 import InputField from "@/Components/InputField";
 import InputError from "@/Components/InputError";
+import Pagination from "@/Components/Pagination";
 
 const emptyForm = { date: "", activity: "", participants: "", lead_division: "", venue: "", remarks: "" };
 const fields = [
@@ -17,14 +18,14 @@ const fields = [
     ["venue", "Venue", "text", "e.g. Division Conference Hall"],
     ["remarks", "Remarks", "text", "Add any notes or reminders"],
 ];
-
-export default function Management({ activities }) {
+export default function Management({ activities, embedded = false }) {
     const { flash = {} } = usePage().props;
     const form = useForm(emptyForm);
     const importForm = useForm({ rows: [] });
     const fileRef = useRef(null);
     const [showForm, setShowForm] = useState(false);
     const [editingActivity, setEditingActivity] = useState(null);
+    const activityRows = activities?.data ?? [];
 
     useEffect(() => { if (flash.success) toast.success(flash.success); }, [flash.success]);
 
@@ -63,7 +64,11 @@ export default function Management({ activities }) {
         setShowForm(true);
     };
 
-    const normalizeKey = (key) => String(key).trim().toLowerCase().replace(/\s+/g, "_");
+    const normalizeKey = (key) => {
+        const normalized = String(key).trim().toLowerCase().replace(/\s+/g, "_");
+
+        return normalized.startsWith("date") ? "date" : normalized;
+    };
     const excelDate = (value) => {
         if (typeof value === "number") {
             const parsed = XLSX.SSF.parse_date_code(value);
@@ -90,18 +95,16 @@ export default function Management({ activities }) {
         } catch (error) { toast.error(error.message || "Unable to read the spreadsheet."); }
     };
 
-    return (
-        <MainLayout>
-            <Head title="CAPA Management" />
-            <BreadCrumbsHeader breadcrumbs={[{ label: "CAPA Management", showOnMobile: true }]} />
-            <div className="min-h-[calc(100vh-65px)] p-5 md:p-8">
-                <div className="mx-auto max-w-7xl">
-                    <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-                        <div><h1 className="text-2xl font-extrabold text-slate-900">CAPA Management</h1><p className="mt-1 text-sm text-slate-500">Add activities manually or import an Excel file.</p></div>
-                        <div className="flex gap-2">
+    const content = (
+            <div className={embedded ? "" : "min-h-[calc(100vh-65px)] p-5 md:p-8"}>
+                <div className={embedded ? "" : "mx-auto max-w-7xl"}>
+                    <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+                        <div><h1 className="flex items-center gap-2 text-xl font-extrabold tracking-tight text-slate-900"><ClipboardList className="size-5 text-blue-700" /> CAPA Management</h1><p className="mt-1 text-xs text-slate-500">Add activities manually or import an Excel file.</p></div>
+                        <div className="flex flex-wrap gap-2">
                             <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" onChange={importExcel} className="hidden" />
-                            <button onClick={() => fileRef.current?.click()} className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-700 hover:bg-emerald-100"><Upload className="size-4" /> Import Excel</button>
-                            <button onClick={openAddForm} className="flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-700/20"><Plus className="size-4" /> Add Activity</button>
+                            <a href={route("capa.template")} download className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-xs font-bold text-blue-700 transition hover:bg-blue-100"><Download className="size-4" /> Download Excel Template</a>
+                            <button onClick={() => fileRef.current?.click()} className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100"><Upload className="size-4" /> Import Excel</button>
+                            <button onClick={openAddForm} className="flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-blue-700/20"><Plus className="size-4" /> Add Activity</button>
                         </div>
                     </div>
 
@@ -154,16 +157,29 @@ export default function Management({ activities }) {
                         </div>
                     )}
 
-                    <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
-                        <div className="flex items-center gap-2 border-b px-5 py-4"><FileSpreadsheet className="size-5 text-emerald-600" /><h2 className="font-extrabold text-slate-800">Activity Records</h2><span className="ml-auto rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500">{activities.length}</span></div>
-                        <div className="overflow-x-auto"><table className="w-full min-w-[1000px] text-left text-sm">
-                            <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr>{["Date", "Activity", "Participants", "Lead Division", "Venue", "Remarks", "Actions"].map((h) => <th key={h} className="px-4 py-3 font-extrabold">{h}</th>)}</tr></thead>
-                            <tbody className="divide-y">{activities.map((item) => <tr key={item.id} className="hover:bg-slate-50"><td className="whitespace-nowrap px-4 py-3 font-bold text-slate-700">{new Date(`${String(item.date).slice(0, 10)}T00:00:00`).toLocaleDateString()}</td><td className="px-4 py-3 font-semibold text-slate-800">{item.activity}</td><td className="px-4 py-3 text-slate-600">{item.participants || "—"}</td><td className="px-4 py-3 text-slate-600">{item.lead_division || "—"}</td><td className="px-4 py-3 text-slate-600">{item.venue || "—"}</td><td className="px-4 py-3 text-slate-600">{item.remarks || "—"}</td><td className="whitespace-nowrap px-4 py-3"><button onClick={() => openEditForm(item)} className="rounded-lg p-2 text-blue-600 hover:bg-blue-50" aria-label="Edit"><Pencil className="size-4" /></button><button onClick={() => confirm("Delete this CAPA activity?") && router.delete(route("capa.destroy", item.id), { preserveScroll: true })} className="rounded-lg p-2 text-red-500 hover:bg-red-50" aria-label="Delete"><Trash2 className="size-4" /></button></td></tr>)}</tbody>
-                        </table>{!activities.length && <p className="py-12 text-center text-sm text-slate-500">No CAPA activities yet.</p>}</div>
+                    <div className="min-w-0 overflow-hidden rounded-3xl border border-white/80 bg-white/70 shadow-[0_8px_30px_rgba(0,0,0,0.03)] backdrop-blur-xl">
+                        <div className="flex items-center gap-2 border-b border-slate-100/80 bg-white/40 px-6 py-4"><FileSpreadsheet className="size-4 text-emerald-600" /><h2 className="text-sm font-bold text-slate-800">CAPA Activity Records</h2><span className="ml-auto rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">{activities?.total ?? 0}</span></div>
+                        <div className="w-full max-w-full overflow-x-auto"><table className="w-full min-w-[1000px] border-collapse text-left">
+                            <thead><tr className="border-b border-slate-100 bg-slate-50/60 text-[11px] font-bold uppercase tracking-wider text-slate-400">{["Date", "Activity", "Participants", "Lead Division", "Venue", "Remarks", "Actions"].map((h) => <th key={h} className="px-6 py-3.5">{h}</th>)}</tr></thead>
+                            <tbody className="divide-y divide-slate-100/60 text-xs">{activityRows.map((item) => <tr key={item.id} className="group transition-colors hover:bg-blue-50/40"><td className="whitespace-nowrap px-6 py-4 font-bold text-slate-700">{new Date(`${String(item.date).slice(0, 10)}T00:00:00`).toLocaleDateString()}</td><td className="px-6 py-4 font-semibold text-slate-800">{item.activity}</td><td className="px-6 py-4 text-slate-600">{item.participants || "—"}</td><td className="px-6 py-4 text-slate-600">{item.lead_division || "—"}</td><td className="px-6 py-4 text-slate-600">{item.venue || "—"}</td><td className="px-6 py-4 text-slate-600">{item.remarks || "—"}</td><td className="whitespace-nowrap px-6 py-4"><button onClick={() => openEditForm(item)} className="rounded-lg p-2 text-blue-600 transition hover:bg-blue-100" aria-label="Edit"><Pencil className="size-4" /></button><button onClick={() => confirm("Delete this CAPA activity?") && router.delete(route("capa.destroy", item.id), { preserveScroll: true })} className="rounded-lg p-2 text-red-500 transition hover:bg-red-50" aria-label="Delete"><Trash2 className="size-4" /></button></td></tr>)}</tbody>
+                        </table>{!activityRows.length && <p className="py-12 text-center text-sm text-slate-500">No CAPA activities yet.</p>}</div>
+                        {activities?.links?.length > 3 && <div className="flex flex-col items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/50 px-5 py-3 sm:flex-row sm:px-6">
+                            <p className="text-[11px] font-medium text-slate-400">Showing <span className="font-bold text-slate-600">{activities.from ?? 0}</span> to <span className="font-bold text-slate-600">{activities.to ?? 0}</span> of <span className="font-bold text-slate-600">{activities.total ?? 0}</span> records</p>
+                            <Pagination links={activities.links} />
+                        </div>}
                     </div>
                     <p className="mt-3 text-xs text-slate-500">Excel columns: Date, Activity, Participants, Lead Division, Venue, Remarks. Date and Activity are required.</p>
                 </div>
             </div>
+    );
+
+    if (embedded) return content;
+
+    return (
+        <MainLayout>
+            <Head title="CAPA Management" />
+            <BreadCrumbsHeader breadcrumbs={[{ label: "CAPA Management", showOnMobile: true }]} />
+            {content}
         </MainLayout>
     );
 }

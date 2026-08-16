@@ -46,6 +46,7 @@ Route::middleware(['auth', 'role:user|admin'])->group(function () {
 
     Route::get('/capa', [CAPAController::class, 'index'])->name('capa.index');
     Route::get('/capa-management', [CAPAController::class, 'management'])->name('capa.management');
+    Route::get('/capa/template/download', [CAPAController::class, 'downloadTemplate'])->name('capa.template');
     Route::post('/capa', [CAPAController::class, 'store'])->name('capa.store');
     Route::post('/capa/import', [CAPAController::class, 'import'])->name('capa.import');
     Route::put('/capa/{cAPA}', [CAPAController::class, 'update'])->name('capa.update');

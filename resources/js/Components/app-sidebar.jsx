@@ -2,7 +2,6 @@ import { Link, usePage } from "@inertiajs/react";
 import {
     CheckCircle2Icon,
     ChevronDownIcon,
-    ClipboardCheckIcon,
     CalendarDaysIcon,
     Clock3Icon,
     FileTextIcon,
@@ -83,11 +82,6 @@ export function AppSidebar({ ...props }) {
             title: "CAPA",
             href: route("capa.index"),
             icon: CalendarDaysIcon,
-        },
-        {
-            title: "CAPA Management",
-            href: route("capa.management"),
-            icon: ClipboardCheckIcon,
         },
     ];
 
