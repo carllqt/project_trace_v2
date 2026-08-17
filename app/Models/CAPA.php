@@ -12,7 +12,8 @@ class CAPA extends Model
     protected $table = 'capas';
 
     protected $fillable = [
-        'date',
+        'date_from',
+        'date_to',
         'activity',
         'participants',
         'lead_division',
@@ -23,7 +24,8 @@ class CAPA extends Model
     protected function casts(): array
     {
         return [
-            'date' => 'date:Y-m-d',
+            'date_from' => 'date:Y-m-d',
+            'date_to' => 'date:Y-m-d',
         ];
     }
 }

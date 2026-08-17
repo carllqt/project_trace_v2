@@ -18,7 +18,8 @@ return new class extends Migration
                 ->unique()
                 ->constrained()
                 ->cascadeOnDelete();
-            $table->date('date')->nullable();
+            $table->date('date_from')->nullable();
+            $table->date('date_to')->nullable();
             $table->text('activity')->nullable();
             $table->text('participants')->nullable();
             $table->string('lead_division')->nullable();

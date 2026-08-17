@@ -9,9 +9,10 @@ import InputField from "@/Components/InputField";
 import InputError from "@/Components/InputError";
 import Pagination from "@/Components/Pagination";
 
-const emptyForm = { date: "", activity: "", participants: "", lead_division: "", venue: "", remarks: "" };
+const emptyForm = { date_from: "", date_to: "", activity: "", participants: "", lead_division: "", venue: "", remarks: "" };
 const fields = [
-    ["date", "Date", "date", ""],
+    ["date_from", "Date From", "date", ""],
+    ["date_to", "Date To", "date", ""],
     ["activity", "Activity", "text", "e.g. Division planning workshop"],
     ["participants", "Participants", "text", "e.g. School heads and coordinators"],
     ["lead_division", "Lead Division", "text", "e.g. Curriculum Implementation Division"],
@@ -53,7 +54,8 @@ export default function Management({ activities, embedded = false }) {
     const openEditForm = (activity) => {
         form.clearErrors();
         form.setData({
-            date: String(activity.date).slice(0, 10),
+            date_from: String(activity.date_from ?? "").slice(0, 10),
+            date_to: String(activity.date_to ?? "").slice(0, 10),
             activity: activity.activity ?? "",
             participants: activity.participants ?? "",
             lead_division: activity.lead_division ?? "",
@@ -65,9 +67,11 @@ export default function Management({ activities, embedded = false }) {
     };
 
     const normalizeKey = (key) => {
-        const normalized = String(key).trim().toLowerCase().replace(/\s+/g, "_");
+        const normalized = String(key).trim().toLowerCase().replace(/\s*\(.*/, "").replace(/\s+/g, "_");
 
-        return normalized.startsWith("date") ? "date" : normalized;
+        if (["capa_date_from", "date_from", "from"].includes(normalized)) return "date_from";
+        if (["capa_date_to", "date_to", "to"].includes(normalized)) return "date_to";
+        return normalized === "date" || normalized === "capa_date" ? "date_from" : normalized;
     };
     const excelDate = (value) => {
         if (typeof value === "number") {
@@ -86,10 +90,10 @@ export default function Management({ activities, embedded = false }) {
             const rawRows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { defval: "" });
             const rows = rawRows.map((raw) => Object.fromEntries(Object.entries(raw).map(([key, value]) => [normalizeKey(key), value])))
                 .map((row) => ({
-                    date: excelDate(row.date), activity: String(row.activity ?? "").trim(), participants: String(row.participants ?? "").trim(),
+                    date_from: excelDate(row.date_from), date_to: excelDate(row.date_to), activity: String(row.activity ?? "").trim(), participants: String(row.participants ?? "").trim(),
                     lead_division: String(row.lead_division ?? "").trim(), venue: String(row.venue ?? "").trim(), remarks: String(row.remarks ?? "").trim(),
-                })).filter((row) => row.date && row.activity);
-            if (!rows.length) throw new Error("No valid rows found. Check the Date and Activity columns.");
+                })).filter((row) => (row.date_from || row.date_to) && row.activity);
+            if (!rows.length) throw new Error("No valid rows found. Check the CAPA Date From, CAPA Date To, and Activity columns.");
             importForm.setData("rows", rows);
             router.post(route("capa.import"), { rows }, { preserveScroll: true, onSuccess: () => { toast.success(`${rows.length} rows imported.`); fileRef.current.value = ""; }, onError: () => toast.error("Some spreadsheet rows are invalid.") });
         } catch (error) { toast.error(error.message || "Unable to read the spreadsheet."); }
@@ -137,7 +141,7 @@ export default function Management({ activities, embedded = false }) {
                                         <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
                                             {fields.map(([name, label, type, placeholder]) => (
                                                 <div key={name} className={name === "remarks" ? "sm:col-span-2" : ""}>
-                                                    <InputField label={label} name={name} type={type} placeholder={placeholder} value={form.data[name]} onChange={(e) => form.setData(name, e.target.value)} required={["date", "activity"].includes(name)} isTextarea={name === "remarks"} rows={3} />
+                                                    <InputField label={label} name={name} type={type} placeholder={placeholder} value={form.data[name]} onChange={(e) => form.setData(name, e.target.value)} required={name === "activity"} isTextarea={name === "remarks"} rows={3} />
                                                     <InputError message={form.errors[name]} />
                                                 </div>
                                             ))}
@@ -160,15 +164,15 @@ export default function Management({ activities, embedded = false }) {
                     <div className="min-w-0 overflow-hidden rounded-3xl border border-white/80 bg-white/70 shadow-[0_8px_30px_rgba(0,0,0,0.03)] backdrop-blur-xl">
                         <div className="flex items-center gap-2 border-b border-slate-100/80 bg-white/40 px-6 py-4"><FileSpreadsheet className="size-4 text-emerald-600" /><h2 className="text-sm font-bold text-slate-800">CAPA Activity Records</h2><span className="ml-auto rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">{activities?.total ?? 0}</span></div>
                         <div className="w-full max-w-full overflow-x-auto"><table className="w-full min-w-[1000px] border-collapse text-left">
-                            <thead><tr className="border-b border-slate-100 bg-slate-50/60 text-[11px] font-bold uppercase tracking-wider text-slate-400">{["Date", "Activity", "Participants", "Lead Division", "Venue", "Remarks", "Actions"].map((h) => <th key={h} className="px-6 py-3.5">{h}</th>)}</tr></thead>
-                            <tbody className="divide-y divide-slate-100/60 text-xs">{activityRows.map((item) => <tr key={item.id} className="group transition-colors hover:bg-blue-50/40"><td className="whitespace-nowrap px-6 py-4 font-bold text-slate-700">{new Date(`${String(item.date).slice(0, 10)}T00:00:00`).toLocaleDateString()}</td><td className="px-6 py-4 font-semibold text-slate-800">{item.activity}</td><td className="px-6 py-4 text-slate-600">{item.participants || "—"}</td><td className="px-6 py-4 text-slate-600">{item.lead_division || "—"}</td><td className="px-6 py-4 text-slate-600">{item.venue || "—"}</td><td className="px-6 py-4 text-slate-600">{item.remarks || "—"}</td><td className="whitespace-nowrap px-6 py-4"><button onClick={() => openEditForm(item)} className="rounded-lg p-2 text-blue-600 transition hover:bg-blue-100" aria-label="Edit"><Pencil className="size-4" /></button><button onClick={() => confirm("Delete this CAPA activity?") && router.delete(route("capa.destroy", item.id), { preserveScroll: true })} className="rounded-lg p-2 text-red-500 transition hover:bg-red-50" aria-label="Delete"><Trash2 className="size-4" /></button></td></tr>)}</tbody>
+                            <thead><tr className="border-b border-slate-100 bg-slate-50/60 text-[11px] font-bold uppercase tracking-wider text-slate-400">{["CAPA Date From", "CAPA Date To", "Activity", "Participants", "Lead Division", "Venue", "Remarks", "Actions"].map((h) => <th key={h} className="px-6 py-3.5">{h}</th>)}</tr></thead>
+                            <tbody className="divide-y divide-slate-100/60 text-xs">{activityRows.map((item) => <tr key={item.id} className="group transition-colors hover:bg-blue-50/40"><td className="whitespace-nowrap px-6 py-4 font-bold text-slate-700">{item.date_from ? new Date(`${String(item.date_from).slice(0, 10)}T00:00:00`).toLocaleDateString() : "—"}</td><td className="whitespace-nowrap px-6 py-4 font-bold text-slate-700">{item.date_to ? new Date(`${String(item.date_to).slice(0, 10)}T00:00:00`).toLocaleDateString() : "—"}</td><td className="px-6 py-4 font-semibold text-slate-800">{item.activity}</td><td className="px-6 py-4 text-slate-600">{item.participants || "—"}</td><td className="px-6 py-4 text-slate-600">{item.lead_division || "—"}</td><td className="px-6 py-4 text-slate-600">{item.venue || "—"}</td><td className="px-6 py-4 text-slate-600">{item.remarks || "—"}</td><td className="whitespace-nowrap px-6 py-4"><button onClick={() => openEditForm(item)} className="rounded-lg p-2 text-blue-600 transition hover:bg-blue-100" aria-label="Edit"><Pencil className="size-4" /></button><button onClick={() => confirm("Delete this CAPA activity?") && router.delete(route("capa.destroy", item.id), { preserveScroll: true })} className="rounded-lg p-2 text-red-500 transition hover:bg-red-50" aria-label="Delete"><Trash2 className="size-4" /></button></td></tr>)}</tbody>
                         </table>{!activityRows.length && <p className="py-12 text-center text-sm text-slate-500">No CAPA activities yet.</p>}</div>
                         {activities?.links?.length > 3 && <div className="flex flex-col items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/50 px-5 py-3 sm:flex-row sm:px-6">
                             <p className="text-[11px] font-medium text-slate-400">Showing <span className="font-bold text-slate-600">{activities.from ?? 0}</span> to <span className="font-bold text-slate-600">{activities.to ?? 0}</span> of <span className="font-bold text-slate-600">{activities.total ?? 0}</span> records</p>
                             <Pagination links={activities.links} />
                         </div>}
                     </div>
-                    <p className="mt-3 text-xs text-slate-500">Excel columns: Date, Activity, Participants, Lead Division, Venue, Remarks. Date and Activity are required.</p>
+                    <p className="mt-3 text-xs text-slate-500">Excel columns: CAPA Date From, CAPA Date To, Activity, Participants, Lead Division, Venue, Remarks. Activity and at least one CAPA date are required.</p>
                 </div>
             </div>
     );

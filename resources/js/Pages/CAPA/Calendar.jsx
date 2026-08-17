@@ -21,10 +21,23 @@ export default function Calendar({ activities, calendarActivities, calendarMonth
     }, [month]);
 
     const activityMap = useMemo(() => calendarActivities.reduce((map, item) => {
-        const key = String(item.date).slice(0, 10);
-        map[key] = [...(map[key] ?? []), item];
+        const start = new Date(`${String(item.date_from ?? item.date_to).slice(0, 10)}T00:00:00`);
+        const end = new Date(`${String(item.date_to ?? item.date_from).slice(0, 10)}T00:00:00`);
+        const firstVisibleDay = new Date(month.getFullYear(), month.getMonth(), 1);
+        const lastVisibleDay = new Date(month.getFullYear(), month.getMonth() + 1, 0);
+
+        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return map;
+
+        const rangeStart = start < firstVisibleDay ? firstVisibleDay : start;
+        const rangeEnd = end > lastVisibleDay ? lastVisibleDay : end;
+
+        for (const date = new Date(rangeStart); date <= rangeEnd; date.setDate(date.getDate() + 1)) {
+            const key = date.toLocaleDateString("en-CA");
+            map[key] = [...(map[key] ?? []), item];
+        }
+
         return map;
-    }, {}), [calendarActivities]);
+    }, {}), [calendarActivities, month]);
 
     const loadMonth = (date) => router.get(route("capa.index"), {
         month: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`,
