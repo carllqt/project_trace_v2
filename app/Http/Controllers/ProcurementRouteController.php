@@ -22,31 +22,58 @@ class ProcurementRouteController extends Controller
                 'receivedBy:id,name,position',
             ])
 
-            // Search
+            /*
+            |--------------------------------------------------------------------------
+            | User Access Restriction
+            |--------------------------------------------------------------------------
+            |
+            | Admins can see all routes.
+            |
+            | Regular users can only see routes where their department is either:
+            | - The originating department (from_department_id)
+            | - The receiving department (to_department_id)
+            |
+            |--------------------------------------------------------------------------
+            */
             ->when(
-                $request->filled('search'),
-                function ($query) use ($request) {
-                    $search = $request->input('search');
+                !auth()->user()->hasRole('admin'),
+                function ($query) {
+                    $departmentId = auth()->user()->department_id;
 
-                    $query->whereHas('procurement', function ($query) use ($search) {
+                    $query->where(function ($query) use ($departmentId) {
                         $query
-                            ->where('pr_no', 'like', "%{$search}%")
-                            ->orWhere(
-                                'project_title',
-                                'like',
-                                "%{$search}%"
-                            )
-                            ->orWhere(
-                                'end_user',
-                                'like',
-                                "%{$search}%"
-                            );
+                            ->where('from_department_id', $departmentId)
+                            ->orWhere('to_department_id', $departmentId);
                     });
                 }
             )
 
-            // Current Department
-            // Filters the department the route was sent TO
+            /*
+            |--------------------------------------------------------------------------
+            | Search
+            |--------------------------------------------------------------------------
+            */
+            ->when(
+                $request->filled('search'),
+                function ($query) use ($request) {
+                    $search = trim($request->input('search'));
+
+                    $query->whereHas('procurement', function ($query) use ($search) {
+                        $query
+                            ->where('pr_no', 'like', "%{$search}%")
+                            ->orWhere('project_title', 'like', "%{$search}%")
+                            ->orWhere('end_user', 'like', "%{$search}%");
+                    });
+                }
+            )
+
+            /*
+            |--------------------------------------------------------------------------
+            | Current Department
+            |--------------------------------------------------------------------------
+            | Filters the department the route was sent TO
+            |--------------------------------------------------------------------------
+            */
             ->when(
                 $request->filled('department'),
                 function ($query) use ($request) {
@@ -57,8 +84,13 @@ class ProcurementRouteController extends Controller
                 }
             )
 
-            // Origin Department
-            // Filters the department the route came FROM
+            /*
+            |--------------------------------------------------------------------------
+            | Origin Department
+            |--------------------------------------------------------------------------
+            | Filters the department the route came FROM
+            |--------------------------------------------------------------------------
+            */
             ->when(
                 $request->filled('origin_department'),
                 function ($query) use ($request) {
@@ -69,7 +101,11 @@ class ProcurementRouteController extends Controller
                 }
             )
 
-            // Stage
+            /*
+            |--------------------------------------------------------------------------
+            | Stage
+            |--------------------------------------------------------------------------
+            */
             ->when(
                 $request->filled('stage'),
                 function ($query) use ($request) {
@@ -80,7 +116,11 @@ class ProcurementRouteController extends Controller
                 }
             )
 
-            // Action
+            /*
+            |--------------------------------------------------------------------------
+            | Action
+            |--------------------------------------------------------------------------
+            */
             ->when(
                 $request->filled('action'),
                 function ($query) use ($request) {
@@ -92,7 +132,7 @@ class ProcurementRouteController extends Controller
             )
 
             ->latest('created_at')
-            ->paginate(15)
+            ->paginate(10)
             ->withQueryString();
 
         $departments = Department::query()

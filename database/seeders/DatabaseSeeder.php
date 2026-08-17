@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
             DepartmentSeeder::class,
             UserSeeder::class,
             ProcurementSeeder::class,
-                ProcurementRouteSeeder::class,
+            ProcurementRouteSeeder::class,
         ]);
 
         $user = User::factory()->create([
@@ -36,10 +36,33 @@ class DatabaseSeeder extends Seeder
         $user->assignRole('user');
 
         $admin = User::factory()->create([
-            'name' => 'Admin User',
-            'email' => 'admin@example.com',
-            'password' => bcrypt('123'),
+            'name' => 'Administrator',
+            'email' => 'admin@sdo.local',
+            'password' => bcrypt('admin123'),
         ]);
         $admin->assignRole('admin');
+
+        $admins = [
+            [
+                'name' => 'Keith Mae De Leon',
+                'email' => 'keith.mae.de.leon@sdo.local',
+            ],
+            [
+                'name' => 'Cheryl Ramiro',
+                'email' => 'cheryl.ramiro@sdo.local',
+            ],
+        ];
+
+        foreach ($admins as $adminData) {
+            $admin = User::updateOrCreate(
+                ['email' => $adminData['email']],
+                [
+                    'name' => $adminData['name'],
+                    'password' => bcrypt('123'),
+                ]
+            );
+
+            $admin->assignRole('admin');
+        }
     }
 }

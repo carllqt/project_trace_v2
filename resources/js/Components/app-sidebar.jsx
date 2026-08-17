@@ -27,6 +27,13 @@ const navLinkBaseClass =
 
 export function AppSidebar({ ...props }) {
     const currentUrl = usePage().url;
+    const user = usePage().props.auth.user;
+    const isAdmin = user?.roles?.some((role) => role.name === "admin") ?? false;
+
+    const isUser = user?.roles?.some((role) => role.name === "user") ?? false;
+
+    const hasNoDepartment =
+        user?.department_id === null || user?.department_id === undefined;
     const userNavItems = [
         {
             title: "Dashboard",
@@ -36,18 +43,13 @@ export function AppSidebar({ ...props }) {
         },
         {
             title: "My Action Queue",
-            href: "#",
+            href: route("procurement.index"),
             icon: Clock3Icon,
         },
         {
-            title: "In Progress PRs",
-            href: "#",
-            icon: FileTextIcon,
-        },
-        {
-            title: "Completed PRs",
-            href: "#",
-            icon: CheckCircle2Icon,
+            title: "Procurement History",
+            href: route("route.index"),
+            icon: HistoryIcon,
         },
         {
             title: "CAPA",
@@ -73,22 +75,24 @@ export function AppSidebar({ ...props }) {
             href: route("route.index"),
             icon: HistoryIcon,
         },
-        {
-            title: "User Management",
-            href: route("user.index"),
-            icon: User,
-        },
+
+        // Only available to admins without a department
+        ...(isAdmin && hasNoDepartment
+            ? [
+                  {
+                      title: "User Management",
+                      href: route("user.index"),
+                      icon: User,
+                  },
+              ]
+            : []),
+
         {
             title: "CAPA",
             href: route("capa.index"),
             icon: CalendarDaysIcon,
         },
     ];
-
-    const user = usePage().props.auth.user;
-
-    const isAdmin = user?.roles?.some((role) => role.name === "admin") ?? false;
-    const isUser = user?.roles?.some((role) => role.name === "user") ?? false;
 
     const navItems = isAdmin ? adminNavItems : userNavItems;
     return (

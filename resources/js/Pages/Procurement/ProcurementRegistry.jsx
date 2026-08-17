@@ -20,6 +20,7 @@ export default function ProcurementRegistry({
     queryParams,
     departments,
     user,
+    showFilters = true,
 }) {
     queryParams = queryParams || {};
     // modal
@@ -222,12 +223,14 @@ export default function ProcurementRegistry({
     return (
         <div className="min-w-0 space-y-4">
             {/* Filter Toolbar */}
-            <FilterToggle
-                queryParams={queryParams}
-                visibleFilters={["department", "queue", "status"]}
-                departments={departments}
-                clearRouteName="dashboard"
-            />
+            {showFilters && (
+                <FilterToggle
+                    queryParams={queryParams}
+                    visibleFilters={["department", "queue", "status"]}
+                    departments={departments}
+                    clearRouteName="dashboard"
+                />
+            )}
             {/* Registry Table */}
             <div className="overflow-hidden rounded-3xl border border-white/80 bg-white/70 shadow-[0_8px_30px_rgba(0,0,0,0.03)] backdrop-blur-xl">
                 {/* Table Header */}

@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 use App\Models\Department;
 use App\Models\Procurement;
+use App\Models\ProcurementRoute;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -10,93 +11,16 @@ class DashboardController extends Controller
 {
     public function user_dashboard()
     {
-        $userDepartmentId = auth()->user()->department_id;
-        $search = request('search');
-        $queue = request('queue');
-        $department = request('department');
-        $status = request('status');
-           /*
-    |--------------------------------------------------------------------------
-    | Base Query
-    | Only procurements currently assigned to the user's department
-    |--------------------------------------------------------------------------
-    */
-    $filteredQuery = Procurement::query()
-        ->where('current_department_id', $userDepartmentId)
-
-        ->when($search, function ($query, $search) {
-            $query->where(function ($query) use ($search) {
-                $query
-                    ->where('pr_no', 'like', "%{$search}%")
-                    ->orWhere('project_title', 'like', "%{$search}%")
-                    ->orWhere('purpose', 'like', "%{$search}%")
-                    ->orWhere('end_user', 'like', "%{$search}%")
-                    ->orWhere(
-                        'mode_of_procurement',
-                        'like',
-                        "%{$search}%"
-                    );
-            });
-        })
-
-        ->when($status, function ($query, $status) {
-            $query->where('status', $status);
-        })
+        $user = auth()->user();
+        $departmentId = $user->department_id;
 
         /*
         |--------------------------------------------------------------------------
-        | Queue Filters
+        | User's Procurement Records
         |--------------------------------------------------------------------------
         */
-        ->when($queue === 'my_queue', function ($query) {
-            $query->where('status', '!=', Procurement::STAGE_7);
-        })
-
-        ->when($queue === 'in_progress', function ($query) {
-            $query->where('status', '!=', Procurement::STAGE_7);
-        })
-
-        ->when($queue === 'completed', function ($query) {
-            $query->where('status', Procurement::STAGE_7);
-        });
-        /*
-        |--------------------------------------------------------------------------
-        | KPI Statistics
-        |--------------------------------------------------------------------------
-        */
-        $stats = [
-            'total' => (clone $filteredQuery)->count(),
-            'myQueue' => (clone $filteredQuery)
-                ->where(
-                    'current_department_id',
-                    $userDepartmentId
-                )
-                ->where(
-                    'status',
-                    '!=',
-                    Procurement::STAGE_7
-                )
-                ->count(),
-            'inProgress' => (clone $filteredQuery)
-                ->where(
-                    'status',
-                    '!=',
-                    Procurement::STAGE_7
-                )
-                ->count(),
-            'completed' => (clone $filteredQuery)
-                ->where(
-                    'status',
-                    Procurement::STAGE_7
-                )
-                ->count(),
-        ];
-        /*
-        |--------------------------------------------------------------------------
-        | Paginated Procurements
-        |--------------------------------------------------------------------------
-        */
-        $procurements = (clone $filteredQuery)
+        $procurements = Procurement::query()
+            ->where('current_department_id', $departmentId)
             ->with([
                 'currentDepartment',
                 'latestRoute.fromDepartment',
@@ -105,124 +29,192 @@ class DashboardController extends Controller
                 'latestRoute.receivedBy',
             ])
             ->latest()
-            ->paginate(10)
-            ->withQueryString();
-        /*
-        |--------------------------------------------------------------------------
-        | Transform Paginated Data
-        |--------------------------------------------------------------------------
-        */
-        $procurements->through(function ($procurement) use ($userDepartmentId) {
+            ->paginate(10);
+
+        $procurements->through(function ($procurement) use ($departmentId) {
+
+            $isCompleted = $procurement->status === Procurement::STAGE_7;
+
             $stageNumber = (int) str_replace(
                 'stage_',
                 '',
                 $procurement->status
             );
-            $isCompleted =
-                $procurement->status === Procurement::STAGE_7;
-            $requiresMyAction =
-                $procurement->current_department_id === $userDepartmentId
-                && !$isCompleted;
-            $route = $procurement->latestRoute;
+
             return [
-                /*
-                |--------------------------------------------------------------------------
-                | Procurement Information
-                |--------------------------------------------------------------------------
-                */
                 'id' => $procurement->id,
                 'pr_no' => $procurement->pr_no,
-                'project_title' =>
-                    $procurement->project_title,
-                'purpose' =>
-                    $procurement->purpose,
-                'end_user' =>
-                    $procurement->end_user,
-                'abc' =>
-                    $procurement->abc,
-                'mode_of_procurement' =>
-                    $procurement->mode_of_procurement,
-                /*
-                |--------------------------------------------------------------------------
-                | Procurement Status
-                |--------------------------------------------------------------------------
-                */
-                'status' =>
-                    $procurement->status,
-                'stage_number' =>
-                    $stageNumber,
-                'is_in_progress' =>
-                    !$isCompleted,
-                'is_completed' =>
-                    $isCompleted,
+                'project_title' => $procurement->project_title,
+                'purpose' => $procurement->purpose,
+                'end_user' => $procurement->end_user,
+                'abc' => $procurement->abc,
+                'mode_of_procurement' => $procurement->mode_of_procurement,
+
+                'status' => $procurement->status,
+                'stage_number' => $stageNumber,
+                'is_completed' => $isCompleted,
+
                 'requires_my_action' =>
-                    $requiresMyAction,
-                /*
-                |--------------------------------------------------------------------------
-                | Current Location
-                |--------------------------------------------------------------------------
-                */
+                    $procurement->current_department_id === $departmentId
+                    && !$isCompleted,
+
                 'current_department' =>
                     $procurement->currentDepartment?->name,
+
                 'current_department_id' =>
                     $procurement->current_department_id,
-                /*
-                |--------------------------------------------------------------------------
-                | Latest Route
-                |--------------------------------------------------------------------------
-                */
-                'route' => $route ? [
-                    'id' =>
-                        $route->id,
+
+                'latest_route' => $procurement->latestRoute ? [
+                    'id' => $procurement->latestRoute->id,
+
                     'from_department' =>
-                        $route->fromDepartment?->name,
+                        $procurement->latestRoute->fromDepartment?->name,
+
                     'to_department' =>
-                        $route->toDepartment?->name,
+                        $procurement->latestRoute->toDepartment?->name,
+
                     'forwarded_by' =>
-                        $route->forwardedBy?->name,
+                        $procurement->latestRoute->forwardedBy?->name,
+
                     'received_by' =>
-                        $route->receivedBy?->name,
-                    'stage' =>
-                        $route->stage,
+                        $procurement->latestRoute->receivedBy?->name,
+
                     'action' =>
-                        $route->action,
+                        $procurement->latestRoute->action,
+
+                    'stage' =>
+                        $procurement->latestRoute->stage,
+
                     'remarks' =>
-                        $route->remarks,
+                        $procurement->latestRoute->remarks,
+
                     'forwarded_at' =>
-                        $route->forwarded_at,
+                        $procurement->latestRoute->forwarded_at,
+
                     'received_at' =>
-                        $route->received_at,
+                        $procurement->latestRoute->received_at,
                 ] : null,
-                /*
-                |--------------------------------------------------------------------------
-                | Route Status
-                |--------------------------------------------------------------------------
-                */
-                'route_status' => $isCompleted
-                    ? 'completed'
-                    : (
-                        $requiresMyAction
-                            ? 'action_required'
-                            : 'in_route'
-                    ),
             ];
         });
+
         /*
         |--------------------------------------------------------------------------
-        | Response
+        | Dashboard Statistics
+        |--------------------------------------------------------------------------
+        */
+        $stats = [
+            'total' => Procurement::where(
+                'current_department_id',
+                $departmentId
+            )->count(),
+
+            'myQueue' => Procurement::where(
+                'current_department_id',
+                $departmentId
+            )
+                ->where('status', '!=', Procurement::STAGE_7)
+                ->count(),
+
+            'inProgress' => Procurement::where(
+                'current_department_id',
+                $departmentId
+            )
+                ->where('status', '!=', Procurement::STAGE_7)
+                ->count(),
+
+            'completed' => Procurement::where(
+                'current_department_id',
+                $departmentId
+            )
+                ->where('status', Procurement::STAGE_7)
+                ->count(),
+        ];
+
+        /*
+        |--------------------------------------------------------------------------
+        | Latest 5 Routing Activities
+        |--------------------------------------------------------------------------
+        */
+        $latestRoutes = ProcurementRoute::query()
+            ->where(function ($query) use ($departmentId) {
+                $query
+                    ->where('from_department_id', $departmentId)
+                    ->orWhere('to_department_id', $departmentId);
+            })
+            ->with([
+                'procurement:id,pr_no,project_title,status',
+                'fromDepartment:id,name',
+                'toDepartment:id,name',
+                'forwardedBy:id,name',
+                'receivedBy:id,name',
+            ])
+            ->latest('updated_at')
+            ->take(5)
+            ->get()
+            ->map(function ($route) {
+                return [
+                    'id' => $route->id,
+
+                    'procurement_id' =>
+                        $route->procurement_id,
+
+                    'pr_no' =>
+                        $route->procurement?->pr_no,
+
+                    'project_title' =>
+                        $route->procurement?->project_title,
+
+                    'action' =>
+                        $route->action,
+
+                    'stage' =>
+                        $route->stage,
+
+                    'from_department' =>
+                        $route->fromDepartment?->name,
+
+                    'to_department' =>
+                        $route->toDepartment?->name,
+
+                    'forwarded_by' =>
+                        $route->forwardedBy?->name,
+
+                    'received_by' =>
+                        $route->receivedBy?->name,
+
+                    'remarks' =>
+                        $route->remarks,
+
+                    'forwarded_at' =>
+                        $route->forwarded_at,
+
+                    'received_at' =>
+                        $route->received_at,
+
+                    'updated_at' =>
+                        $route->updated_at,
+                ];
+            });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Dashboard
         |--------------------------------------------------------------------------
         */
         return Inertia::render('Procurement/Index', [
-            'departments' => Department::pluck(
-                'name',
-                'id'
-            )->toArray(),
-            'procurements' =>
-                $procurements,
-            'stats' =>
-                $stats,
-            'queryParams' =>
-                request()->query(),
+            'procurements' => $procurements,
+            'departments' => Department::pluck('name', 'id')->toArray(),
+
+            'latestRoutes' => $latestRoutes,
+
+            'stats' => $stats,
+
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'department_id' => $departmentId,
+                'department' => $user->department?->name,
+            ],
         ]);
     }
     public function admin_dashboard()

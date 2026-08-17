@@ -38,6 +38,25 @@ class ProcurementController extends Controller
 
             /*
             |--------------------------------------------------------------------------
+            | User Access Restriction
+            |--------------------------------------------------------------------------
+            |
+            | Admins can see all procurement records.
+            | Regular users only see records assigned to their department.
+            |
+            */
+            ->when(
+                !auth()->user()->hasRole('admin'),
+                function ($query) {
+                    $query->where(
+                        'current_department_id',
+                        auth()->user()->department_id
+                    );
+                }
+            )
+
+            /*
+            |--------------------------------------------------------------------------
             | Search
             |--------------------------------------------------------------------------
             */
@@ -49,26 +68,10 @@ class ProcurementController extends Controller
                     $query->where(function ($query) use ($search) {
                         $query
                             ->where('pr_no', 'like', "%{$search}%")
-                            ->orWhere(
-                                'project_title',
-                                'like',
-                                "%{$search}%"
-                            )
-                            ->orWhere(
-                                'purpose',
-                                'like',
-                                "%{$search}%"
-                            )
-                            ->orWhere(
-                                'end_user',
-                                'like',
-                                "%{$search}%"
-                            )
-                            ->orWhere(
-                                'mode_of_procurement',
-                                'like',
-                                "%{$search}%"
-                            );
+                            ->orWhere('project_title', 'like', "%{$search}%")
+                            ->orWhere('purpose', 'like', "%{$search}%")
+                            ->orWhere('end_user', 'like', "%{$search}%")
+                            ->orWhere('mode_of_procurement', 'like', "%{$search}%");
                     });
                 }
             )
