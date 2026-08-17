@@ -10,6 +10,8 @@ import {
     Layers3Icon,
     User,
     UserRoundCheckIcon,
+    ArrowDownToLineIcon,
+    ArrowUpFromLineIcon,
 } from "lucide-react";
 
 import {
@@ -47,6 +49,16 @@ export function AppSidebar({ ...props }) {
             icon: Clock3Icon,
         },
         {
+            title: "Incoming PRs",
+            href: route("incoming.index", { type: "incoming" }),
+            icon: ArrowDownToLineIcon,
+        },
+        {
+            title: "Outgoing PRs",
+            href: route("outgoing.index", { type: "outgoing" }),
+            icon: ArrowUpFromLineIcon,
+        },
+        {
             title: "Procurement History",
             href: route("route.index"),
             icon: HistoryIcon,
@@ -69,6 +81,16 @@ export function AppSidebar({ ...props }) {
             title: "Procurement Records",
             href: route("procurement.index"),
             icon: HistoryIcon,
+        },
+        {
+            title: "Incoming PRs",
+            href: route("incoming.index", { type: "incoming" }),
+            icon: ArrowDownToLineIcon,
+        },
+        {
+            title: "Outgoing PRs",
+            href: route("outgoing.index", { type: "outgoing" }),
+            icon: ArrowUpFromLineIcon,
         },
         {
             title: "Routing History",
