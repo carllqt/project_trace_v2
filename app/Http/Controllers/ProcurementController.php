@@ -573,11 +573,6 @@ class ProcurementController extends Controller
             'stage_data.payment.date_prepared' => ['nullable', 'date'],
             'stage_data.payment.date_crediting' => ['nullable', 'date'],
             // CAPA
-            'stage_data.capa' => ['nullable', 'array'],
-            'stage_data.capa.calendar_of_activities' => [
-                'nullable',
-                'date',
-            ],
             'stage_data.capa.date_of_implementation' => [
                 'nullable',
                 'date',
@@ -759,28 +754,6 @@ class ProcurementController extends Controller
                             $payment['date_prepared'] ?? null,
                         'date_crediting' =>
                             $payment['date_crediting'] ?? null,
-                    ]
-                );
-            }
-            /*
-            |--------------------------------------------------------------------------
-            | 7. SAVE CAPA STAGE
-            |--------------------------------------------------------------------------
-            */
-            if (isset($stageData['capa'])) {
-                $capa = $stageData['capa'];
-                Capa::updateOrCreate(
-                    [
-                        'procurement_id' =>
-                            $procurement->id,
-                    ],
-                    [
-                        'calendar_of_activities' =>
-                            $capa['calendar_of_activities']
-                            ?? null,
-                        'date_of_implementation' =>
-                            $capa['date_of_implementation']
-                            ?? null,
                     ]
                 );
             }
