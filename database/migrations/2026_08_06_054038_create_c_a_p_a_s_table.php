@@ -14,10 +14,6 @@ return new class extends Migration
         Schema::create('capas', function (Blueprint $table) {
 
             $table->id();
-            $table->foreignId('procurement_id')
-                ->unique()
-                ->constrained()
-                ->cascadeOnDelete();
             $table->date('date_from')->nullable();
             $table->date('date_to')->nullable();
             $table->text('activity')->nullable();
