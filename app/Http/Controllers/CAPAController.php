@@ -4,6 +4,7 @@ use App\Models\CAPA;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 class CAPAController extends Controller
 {
@@ -23,12 +24,27 @@ class CAPAController extends Controller
 
         return Inertia::render('CAPA/Calendar', [
             'activities' => $canManage
-                ? CAPA::query()->orderBy('date')->paginate(5)->withQueryString()
+                ? CAPA::query()->orderByRaw('COALESCE(date_from, date_to)')->paginate(5)->withQueryString()
                 : null,
             'calendarActivities' => CAPA::query()
-                ->select(['id', 'date', 'activity'])
-                ->whereBetween('date', [$monthStart, $monthStart->endOfMonth()])
-                ->orderBy('date')
+                ->select(['id', 'date_from', 'date_to', 'activity'])
+                ->where(function ($query) use ($monthStart) {
+                    $monthEnd = $monthStart->endOfMonth();
+
+                    $query->where(function ($query) use ($monthStart, $monthEnd) {
+                        $query->whereNotNull('date_from')
+                            ->where('date_from', '<=', $monthEnd)
+                            ->where(function ($query) use ($monthStart) {
+                                $query->whereNull('date_to')
+                                    ->orWhere('date_to', '>=', $monthStart);
+                            });
+                    })
+                        ->orWhere(function ($query) use ($monthStart, $monthEnd) {
+                            $query->whereNull('date_from')
+                                ->whereBetween('date_to', [$monthStart, $monthEnd]);
+                        });
+                })
+                ->orderByRaw('COALESCE(date_from, date_to)')
                 ->get(),
             'calendarMonth' => $calendarMonth,
             'canManage' => $canManage,
@@ -67,7 +83,8 @@ class CAPAController extends Controller
         abort_unless($request->user()?->hasRole('admin'), 403);
 
         $data = $request->validate([
-            'date' => ['required', 'date'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
             'activity' => ['required', 'string', 'max:2000'],
             'participants' => ['nullable', 'string', 'max:2000'],
             'lead_division' => ['nullable', 'string', 'max:255'],
@@ -75,7 +92,7 @@ class CAPAController extends Controller
             'remarks' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        CAPA::create($data);
+        CAPA::create($this->prepareDateRange($data));
 
         return back()->with('success', 'CAPA activity added successfully.');
     }
@@ -86,7 +103,8 @@ class CAPAController extends Controller
 
         $data = $request->validate([
             'rows' => ['required', 'array', 'min:1', 'max:1000'],
-            'rows.*.date' => ['required', 'date'],
+            'rows.*.date_from' => ['nullable', 'date'],
+            'rows.*.date_to' => ['nullable', 'date'],
             'rows.*.activity' => ['required', 'string', 'max:2000'],
             'rows.*.participants' => ['nullable', 'string', 'max:2000'],
             'rows.*.lead_division' => ['nullable', 'string', 'max:255'],
@@ -94,7 +112,23 @@ class CAPAController extends Controller
             'rows.*.remarks' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        DB::transaction(fn () => collect($data['rows'])->each(
+        $rows = collect($data['rows'])->map(function (array $row, int $index) {
+            if (blank($row['date_from'] ?? null) && blank($row['date_to'] ?? null)) {
+                throw ValidationException::withMessages([
+                    "rows.$index.date_from" => 'Enter a CAPA Date From or CAPA Date To.',
+                ]);
+            }
+
+            if (filled($row['date_from'] ?? null) && filled($row['date_to'] ?? null) && $row['date_to'] < $row['date_from']) {
+                throw ValidationException::withMessages([
+                    "rows.$index.date_to" => 'The CAPA Date To must be on or after CAPA Date From.',
+                ]);
+            }
+
+            return $this->prepareDateRange($row);
+        });
+
+        DB::transaction(fn () => $rows->each(
             fn (array $row) => CAPA::create($row)
         ));
 
@@ -122,7 +156,8 @@ class CAPAController extends Controller
         abort_unless($request->user()?->hasRole('admin'), 403);
 
         $data = $request->validate([
-            'date' => ['required', 'date'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
             'activity' => ['required', 'string', 'max:2000'],
             'participants' => ['nullable', 'string', 'max:2000'],
             'lead_division' => ['nullable', 'string', 'max:255'],
@@ -130,7 +165,7 @@ class CAPAController extends Controller
             'remarks' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $cAPA->update($data);
+        $cAPA->update($this->prepareDateRange($data));
 
         return back()->with('success', 'CAPA activity updated successfully.');
     }
@@ -143,5 +178,18 @@ class CAPAController extends Controller
         $cAPA->delete();
 
         return back()->with('success', 'CAPA activity deleted.');
+    }
+
+    private function prepareDateRange(array $data): array
+    {
+        $dateFrom = $data['date_from'] ?? null;
+        $dateTo = $data['date_to'] ?? null;
+
+        validator(
+            ['date_from' => $dateFrom, 'date_to' => $dateTo],
+            ['date_from' => ['required_without:date_to'], 'date_to' => ['required_without:date_from']]
+        )->validate();
+
+        return $data;
     }
 }
