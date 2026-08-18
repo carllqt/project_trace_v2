@@ -43,6 +43,7 @@ class Procurement extends Model
         'project_title',
         'purpose',
         'end_user',
+        'end_user_department_id',
         'abc',
         'mode_of_procurement',
         'date_of_implementation',
@@ -56,6 +57,13 @@ class Procurement extends Model
     public function currentDepartment()
     {
         return $this->belongsTo(Department::class, 'current_department_id');
+    }
+    public function endUserDepartment(): BelongsTo
+    {
+        return $this->belongsTo(
+            Department::class,
+            'end_user_department_id'
+        );
     }
     public function pr(): HasOne
     {
@@ -175,7 +183,6 @@ class Procurement extends Model
             ->get();
         $latestDelivery = $deliveries->first();
         $implementation = $this->implementation;
-        $capa = $this->capa;
         /*
         |--------------------------------------------------------------------------
         | Activity Logs
@@ -381,10 +388,7 @@ class Procurement extends Model
                 | CAPA
                 |--------------------------------------------------------------------------
                 */
-                'capa' => [
-                    'calendar_of_activities' =>
-                        $capa?->calendar_of_activities,
-                ],
+
             ],
             /*
             |--------------------------------------------------------------------------

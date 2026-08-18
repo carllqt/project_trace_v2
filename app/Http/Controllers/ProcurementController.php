@@ -445,6 +445,7 @@ class ProcurementController extends Controller
                     'project_title' => $request->project_title,
                     'purpose' => $request->purpose,
                     'end_user' => $enduser,
+                    'end_user_department_id' => $request->end_user,
                     'abc' => $request->abc,
                     'mode_of_procurement' => $request->mode_of_procurement,
                     'status' => Procurement::STAGE_1,
@@ -498,7 +499,6 @@ class ProcurementController extends Controller
             'department',
             'purchaseOrder',
             'implementation',
-            'capa',
         ]);
         return response()->json(
             $procurement->getWorkflowData(

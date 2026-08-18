@@ -28,8 +28,11 @@ const navLinkBaseClass =
     "flex h-9 w-full items-center justify-start gap-2 rounded-2xl px-3.5 text-xs font-extrabold";
 
 export function AppSidebar({ ...props }) {
-    const currentUrl = usePage().url;
-    const user = usePage().props.auth.user;
+    const page = usePage();
+
+    const currentUrl = page.url;
+    const user = page.props.auth.user;
+    const incomingPRCount = page.props.incomingPRCount ?? 0;
     const isAdmin = user?.roles?.some((role) => role.name === "admin") ?? false;
 
     const isUser = user?.roles?.some((role) => role.name === "user") ?? false;
@@ -50,8 +53,13 @@ export function AppSidebar({ ...props }) {
         },
         {
             title: "Incoming PRs",
-            href: route("incoming.index", { type: "incoming" }),
+            href: route("incoming.index", {
+                type: "incoming",
+            }),
             icon: ArrowDownToLineIcon,
+
+            // RED BADGE
+            badge: incomingPRCount,
         },
         {
             title: "Outgoing PRs",
@@ -84,8 +92,13 @@ export function AppSidebar({ ...props }) {
         },
         {
             title: "Incoming PRs",
-            href: route("incoming.index", { type: "incoming" }),
+            href: route("incoming.index", {
+                type: "incoming",
+            }),
             icon: ArrowDownToLineIcon,
+
+            // RED BADGE
+            badge: incomingPRCount,
         },
         {
             title: "Outgoing PRs",
@@ -167,9 +180,13 @@ export function AppSidebar({ ...props }) {
                                     <span className="min-w-0 truncate">
                                         {item.title}
                                     </span>
-                                    {item.badge ? (
-                                        <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-100 px-1.5 text-xs font-extrabold text-blue-600">
-                                            {item.badge}
+
+                                    {/* INCOMING PR BADGE */}
+                                    {item.badge > 0 ? (
+                                        <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-extrabold text-white shadow-sm shadow-red-500/30">
+                                            {item.badge > 99
+                                                ? "99+"
+                                                : item.badge}
                                         </span>
                                     ) : null}
                                 </Link>

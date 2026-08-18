@@ -18,6 +18,10 @@ return new class extends Migration
             $table->string('project_title');
             $table->text('purpose')->nullable();
             $table->string('end_user')->nullable();
+            $table->foreignId('end_user_department_id')
+            ->nullable()
+            ->constrained('departments')
+            ->nullOnDelete();
             $table->decimal('abc',15,2)->nullable();
             $table->string('mode_of_procurement')->nullable();
             $table->string('status')->default(Procurement::STAGE_1);
