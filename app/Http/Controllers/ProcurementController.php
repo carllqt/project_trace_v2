@@ -920,4 +920,17 @@ class ProcurementController extends Controller
         );
     }
 
+    public function details(Procurement $procurement)
+    {
+        $procurement->load([
+            'routes',
+            'activityLogs',
+            'documents',
+        ]);
+
+        return Inertia::render('Procurement/Show', [
+            'procurement' => $procurement,
+        ]);
+    }
+
 }

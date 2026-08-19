@@ -244,7 +244,9 @@ export default function Index({
                 onClick={(event) => {
                     event.stopPropagation();
 
-                    router.visit(route("procurement.show", row.procurement_id));
+                    router.visit(
+                        route("procurement.details", row.procurement_id),
+                    );
                 }}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-600 shadow-sm transition-all hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
             >
@@ -261,11 +263,9 @@ export default function Index({
     */
 
     const handleRowClick = (row) => {
-        if (!row.procurement_id) {
-            return;
-        }
+        const procurementId = row.procurement_id ?? row.procurement?.id;
 
-        router.visit(route("procurement.show", row.procurement_id));
+        if (!procurementId) return;
     };
 
     return (
