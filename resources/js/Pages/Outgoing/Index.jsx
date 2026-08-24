@@ -52,8 +52,8 @@ export default function Index({
         },
 
         {
-            key: "destination",
-            label: "Forwarded To",
+            key: "current_department",
+            label: "Current Department",
         },
 
         {
@@ -63,34 +63,32 @@ export default function Index({
 
         {
             key: "forwarded_at",
-            label: "Forwarded",
+            label: "Latest Forwarded",
         },
 
         {
             key: "receipt_status",
-            label: "Status",
+            label: "Route Status",
         },
 
-        {
-            key: "actions",
-            label: "Action",
-            className: "text-right",
-            cellClassName: "text-right",
-        },
+        // {
+        //     key: "actions",
+        //     label: "Action",
+        //     className: "text-right",
+        //     cellClassName: "text-right",
+        // },
     ];
-
     /*
     |--------------------------------------------------------------------------
     | Table Renderers
     |--------------------------------------------------------------------------
     */
-
     const columnRenderers = {
         /*
-        |--------------------------------------------------------------------------
-        | PR Number
-        |--------------------------------------------------------------------------
-        */
+    |--------------------------------------------------------------------------
+    | PR Number
+    |--------------------------------------------------------------------------
+    */
 
         pr_no: (row) => (
             <div className="flex items-center gap-2">
@@ -100,41 +98,41 @@ export default function Index({
 
                 <div>
                     <p className="font-bold text-slate-700">
-                        {row.procurement?.pr_no ?? "-"}
+                        {row.pr_no ?? "-"}
                     </p>
 
                     <p className="text-[10px] text-slate-400">
-                        Route #{row.id}
+                        PR ID #{row.id}
                     </p>
                 </div>
             </div>
         ),
 
         /*
-        |--------------------------------------------------------------------------
-        | Project
-        |--------------------------------------------------------------------------
-        */
+    |--------------------------------------------------------------------------
+    | Project
+    |--------------------------------------------------------------------------
+    */
 
         project_title: (row) => (
             <div className="min-w-[220px] max-w-[320px]">
                 <p className="truncate font-semibold text-slate-700">
-                    {row.procurement?.project_title ?? "-"}
+                    {row.project_title ?? "-"}
                 </p>
 
-                {row.procurement?.purpose && (
+                {row.purpose && (
                     <p className="mt-0.5 truncate text-[10px] text-slate-400">
-                        {row.procurement.purpose}
+                        {row.purpose}
                     </p>
                 )}
             </div>
         ),
 
         /*
-        |--------------------------------------------------------------------------
-        | End User
-        |--------------------------------------------------------------------------
-        */
+    |--------------------------------------------------------------------------
+    | End User
+    |--------------------------------------------------------------------------
+    */
 
         end_user: (row) => (
             <div className="flex min-w-[180px] items-center gap-2">
@@ -142,82 +140,98 @@ export default function Index({
 
                 <div>
                     <p className="font-semibold text-slate-700">
-                        {row.procurement?.end_user ?? "-"}
+                        {row.end_user ?? "-"}
                     </p>
 
                     <p className="text-[10px] text-slate-400">
-                        {row.procurement?.end_user_department?.name ?? "-"}
+                        {row.end_user_department ?? "-"}
                     </p>
                 </div>
             </div>
         ),
 
         /*
-        |--------------------------------------------------------------------------
-        | Destination
-        |--------------------------------------------------------------------------
-        */
+    |--------------------------------------------------------------------------
+    | Current Department
+    |--------------------------------------------------------------------------
+    */
 
-        destination: (row) => (
+        current_department: (row) => (
             <div className="flex min-w-[170px] items-center gap-2">
                 <Building2 className="h-3.5 w-3.5 shrink-0 text-slate-400" />
 
                 <div>
                     <p className="font-semibold text-slate-700">
-                        {row.to_department?.name ?? "-"}
+                        {row.current_department ?? "-"}
                     </p>
 
-                    <p className="text-[10px] text-slate-400">
-                        {row.to_department?.code ?? ""}
-                    </p>
+                    {row.latest_route?.to_department && (
+                        <p className="text-[10px] text-slate-400">
+                            Latest destination
+                        </p>
+                    )}
                 </div>
             </div>
         ),
 
         /*
-        |--------------------------------------------------------------------------
-        | Stage
-        |--------------------------------------------------------------------------
-        */
+    |--------------------------------------------------------------------------
+    | Stage
+    |--------------------------------------------------------------------------
+    */
 
         stage: (row) => (
             <span className="inline-flex whitespace-nowrap rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-bold text-indigo-600">
-                {(row.stage ?? "")
-                    .replace("_", " ")
-                    .replace(/\b\w/g, (char) => char.toUpperCase())}
+                Stage {row.stage ?? "-"}
             </span>
         ),
 
         /*
-        |--------------------------------------------------------------------------
-        | Forwarded Date
-        |--------------------------------------------------------------------------
-        */
+    |--------------------------------------------------------------------------
+    | Latest Forwarded Date
+    |--------------------------------------------------------------------------
+    */
 
-        forwarded_at: (row) => (
-            <div className="flex items-center gap-2 whitespace-nowrap">
-                <CalendarDays className="h-3.5 w-3.5 text-slate-400" />
+        forwarded_at: (row) => {
+            const date = row.latest_route?.forwarded_at;
 
-                <div>
-                    <p className="font-semibold text-slate-600">
-                        {formatDate(row.forwarded_at)}
-                    </p>
+            return (
+                <div className="flex items-center gap-2 whitespace-nowrap">
+                    <CalendarDays className="h-3.5 w-3.5 text-slate-400" />
 
-                    <p className="text-[10px] text-slate-400">
-                        {formatTime(row.forwarded_at)}
-                    </p>
+                    <div>
+                        <p className="font-semibold text-slate-600">
+                            {date ? formatDate(date) : "-"}
+                        </p>
+
+                        {date && (
+                            <p className="text-[10px] text-slate-400">
+                                {formatTime(date)}
+                            </p>
+                        )}
+                    </div>
                 </div>
-            </div>
-        ),
+            );
+        },
 
         /*
-        |--------------------------------------------------------------------------
-        | Receipt Status
-        |--------------------------------------------------------------------------
-        */
+    |--------------------------------------------------------------------------
+    | Route / Receipt Status
+    |--------------------------------------------------------------------------
+    */
 
         receipt_status: (row) => {
-            const received = Boolean(row.received_by);
+            const route = row.latest_route;
+
+            if (!route) {
+                return (
+                    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-slate-50 px-2.5 py-1 text-[10px] font-bold text-slate-500 ring-1 ring-slate-100">
+                        No Route
+                    </span>
+                );
+            }
+
+            const received = Boolean(route.received_at);
 
             return received ? (
                 <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-600 ring-1 ring-emerald-100">
@@ -233,27 +247,25 @@ export default function Index({
         },
 
         /*
-        |--------------------------------------------------------------------------
-        | Actions
-        |--------------------------------------------------------------------------
-        */
+    |--------------------------------------------------------------------------
+    | Actions
+    |--------------------------------------------------------------------------
+    */
 
-        actions: (row) => (
-            <button
-                type="button"
-                onClick={(event) => {
-                    event.stopPropagation();
+        // actions: (row) => (
+        //     <button
+        //         type="button"
+        //         onClick={(event) => {
+        //             event.stopPropagation();
 
-                    router.visit(
-                        route("procurement.details", row.procurement_id),
-                    );
-                }}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-600 shadow-sm transition-all hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
-            >
-                <Eye className="h-3.5 w-3.5" />
-                View Details
-            </button>
-        ),
+        //             router.visit(route("procurement.details", row.id));
+        //         }}
+        //         className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-600 shadow-sm transition-all hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+        //     >
+        //         <Eye className="h-3.5 w-3.5" />
+        //         View Details
+        //     </button>
+        // ),
     };
 
     /*

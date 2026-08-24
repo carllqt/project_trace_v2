@@ -47,7 +47,7 @@ export function AppSidebar({ ...props }) {
             active: true,
         },
         {
-            title: "My Action Queue",
+            title: "My Procurements",
             href: route("procurement.index"),
             icon: Clock3Icon,
         },

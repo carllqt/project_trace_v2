@@ -48,10 +48,22 @@ class ProcurementController extends Controller
             ->when(
                 !auth()->user()->hasRole('admin'),
                 function ($query) {
-                    $query->where(
-                        'current_department_id',
-                        auth()->user()->department_id
-                    );
+                    $departmentId = auth()->user()->department_id;
+
+                    $query->where(function ($query) use ($departmentId) {
+
+                        // Procurements originating from user's department
+                        $query->where(
+                            'end_user_department_id',
+                            $departmentId
+                        )
+
+                        // OR procurements currently assigned to user's department
+                        ->orWhere(
+                            'current_department_id',
+                            $departmentId
+                        );
+                    });
                 }
             )
 
@@ -171,6 +183,7 @@ class ProcurementController extends Controller
         */
         $procurements = (clone $filteredQuery)
             ->with([
+                'endUserDepartment',
                 'currentDepartment',
 
                 'latestRoute.fromDepartment',

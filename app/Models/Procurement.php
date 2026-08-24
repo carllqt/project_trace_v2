@@ -246,7 +246,9 @@ class Procurement extends Model
             'purpose' =>
                 $this->purpose,
             'end_user' =>
-                $this->end_user,
+                $this->endUserDepartment?->name,
+            'end_user_department_id' =>
+                $this->end_user_department_id,
             'abc' =>
                 $this->abc,
             'mode_of_procurement' =>
@@ -286,13 +288,15 @@ class Procurement extends Model
                     'purpose' =>
                         $this->purpose,
                     'end_user' =>
-                        $this->end_user,
+                        $this->endUserDepartment?->name,
+                    'end_user_department_id' =>
+                        $this->end_user_department_id,
                     'abc' =>
                         $this->abc,
                     'mode_of_procurement' =>
                         $this->mode_of_procurement,
                     'date_of_implementation' =>
-                    $this?->date_of_implementation,
+                        $this->date_of_implementation,
                 ],
                 /*
                 |--------------------------------------------------------------------------

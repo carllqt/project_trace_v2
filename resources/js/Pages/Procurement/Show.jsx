@@ -140,33 +140,99 @@ function StageValue({ label, value }) {
 }
 
 export default function Show({ procurement }) {
-    const [showDispatchModal, setShowDispatchModal] = useState(false);
-    const [dispatching, setDispatching] = useState(false);
-
     const breadcrumbs = [
         {
-            label: "Dashboard",
-            href: route("dashboard"),
-        },
-        {
-            label: "Procurement",
-            href: route("procurement.index"),
-        },
-        {
-            label: procurement?.pr_no || "Procurement Details",
+            label: "Procurement Details",
             showOnMobile: true,
         },
     ];
+    const [showDispatchModal, setShowDispatchModal] = useState(false);
+    const [dispatching, setDispatching] = useState(false);
 
-    const currentStage = procurement?.stage || 1;
+    // =====================================================
+    // GET CURRENT STAGE
+    // Supports:
+    //   stage: 1
+    //   stage: "1"
+    //   stage: "stage_1"
+    //   status: "stage_1"
+    // =====================================================
+    const getCurrentStage = (procurement) => {
+        const stageValue = procurement?.stage;
 
+        // Example: stage = 7
+        if (
+            stageValue !== undefined &&
+            stageValue !== null &&
+            stageValue !== ""
+        ) {
+            const numericStage = Number(stageValue);
+
+            if (!Number.isNaN(numericStage)) {
+                return numericStage;
+            }
+
+            // Example: stage = "stage_7"
+            const stageMatch = String(stageValue).match(/^stage_(\d+)$/);
+
+            if (stageMatch) {
+                return Number(stageMatch[1]);
+            }
+        }
+
+        // Example: status = "stage_7"
+        const statusMatch = String(procurement?.status || "").match(
+            /^stage_(\d+)$/,
+        );
+
+        if (statusMatch) {
+            return Number(statusMatch[1]);
+        }
+
+        // Fallback
+        return 1;
+    };
+
+    const currentStage = getCurrentStage(procurement);
+
+    // =====================================================
+    // SELECTED STAGE
+    // This is what the user clicks in the stepper.
+    // =====================================================
+    const [selectedStage, setSelectedStage] = useState(currentStage);
+
+    // =====================================================
+    // IMPORTANT:
+    // If Laravel/Inertia reloads the procurement after
+    // dispatching, update the selected stage too.
+    // =====================================================
+    React.useEffect(() => {
+        setSelectedStage(currentStage);
+    }, [currentStage]);
+
+    // =====================================================
+    // CURRENT STAGE INFORMATION
+    // =====================================================
     const currentStageInfo =
         PROCUREMENT_STAGES.find((stage) => stage.id === currentStage) ||
         PROCUREMENT_STAGES[0];
 
-    const currentStageData = getStageData(procurement, currentStage);
+    // =====================================================
+    // SELECTED STAGE INFORMATION
+    // =====================================================
+    const selectedStageInfo =
+        PROCUREMENT_STAGES.find((stage) => stage.id === selectedStage) ||
+        PROCUREMENT_STAGES[0];
 
-    const CurrentStageIcon = FileText;
+    // =====================================================
+    // SELECTED STAGE DATA
+    // Example:
+    //
+    // Stage 1 -> procurement.stage_data.pr
+    // Stage 2 -> procurement.stage_data.rfq
+    // Stage 3 -> procurement.stage_data.po
+    // =====================================================
+    const selectedStageData = getStageData(procurement, selectedStage);
 
     const handleDispatch = () => {
         setDispatching(true);
@@ -176,6 +242,7 @@ export default function Show({ procurement }) {
             {},
             {
                 preserveScroll: true,
+
                 onFinish: () => {
                     setDispatching(false);
                     setShowDispatchModal(false);
@@ -189,7 +256,7 @@ export default function Show({ procurement }) {
             <Head title={`${procurement?.pr_no || "Procurement"} Details`} />
 
             <BreadCrumbsHeader breadcrumbs={breadcrumbs} />
-
+            <pre>{JSON.stringify(procurement, undefined, 2)}</pre>
             <div className="relative flex-1 overflow-x-hidden overflow-y-auto bg-slate-50/60">
                 <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                     {/* =====================================================
@@ -269,11 +336,9 @@ export default function Show({ procurement }) {
                         </div>
                     </div>
 
-                    {/* =====================================================
-                        STAGE PROGRESS
-                    ====================================================== */}
                     <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                        <div className="mb-6 flex items-center justify-between">
+                        {/* HEADER */}
+                        <div className="mb-7 flex items-center justify-between">
                             <div>
                                 <h2 className="text-sm font-bold text-slate-900">
                                     Procurement Progress
@@ -282,7 +347,8 @@ export default function Show({ procurement }) {
                                 <p className="mt-1 text-xs text-slate-500">
                                     Current stage:{" "}
                                     <span className="font-semibold text-blue-600">
-                                        {currentStageInfo.name}
+                                        {currentStageInfo?.name ||
+                                            `Stage ${currentStage}`}
                                     </span>
                                 </p>
                             </div>
@@ -293,42 +359,183 @@ export default function Show({ procurement }) {
                             </div>
                         </div>
 
-                        <div className="relative">
-                            {/* Progress line */}
-                            <div className="absolute left-0 right-0 top-5 hidden h-0.5 bg-slate-100 md:block" />
+                        {/* ============================================================
+        DESKTOP STEPPER
+    ============================================================ */}
+                        <div className="hidden md:block">
+                            <div className="relative px-5">
+                                {/* BASE CONNECTOR */}
+                                <div className="absolute left-[calc(100%/14)] right-[calc(100%/14)] top-5 h-0.5 bg-slate-200" />
 
-                            <div
-                                className="absolute left-0 top-5 hidden h-0.5 bg-blue-500 transition-all md:block"
-                                style={{
-                                    width: `${
-                                        (Math.max(currentStage - 1, 0) /
-                                            (PROCUREMENT_STAGES.length - 1)) *
-                                        100
-                                    }%`,
-                                }}
-                            />
+                                {/* COMPLETED CONNECTOR */}
+                                <div
+                                    className="absolute left-[calc(100%/14)] top-5 h-0.5 bg-blue-600 transition-all duration-500"
+                                    style={{
+                                        width:
+                                            currentStage > 1
+                                                ? `calc(${
+                                                      ((Math.min(
+                                                          currentStage,
+                                                          PROCUREMENT_STAGES.length,
+                                                      ) -
+                                                          1) /
+                                                          (PROCUREMENT_STAGES.length -
+                                                              1)) *
+                                                      100
+                                                  }% - ${100 / 7}%)`
+                                                : "0%",
+                                    }}
+                                />
 
-                            <div className="relative grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-7 md:gap-2">
-                                {PROCUREMENT_STAGES.map((stage) => {
-                                    const completed = stage.id < currentStage;
-                                    const active = stage.id === currentStage;
+                                {/* STAGES */}
+                                <div
+                                    className="relative grid"
+                                    style={{
+                                        gridTemplateColumns: `repeat(${PROCUREMENT_STAGES.length}, minmax(0, 1fr))`,
+                                    }}
+                                >
+                                    {PROCUREMENT_STAGES.map((stage) => {
+                                        const stageId = Number(stage.id);
+
+                                        const completed =
+                                            stageId < currentStage;
+                                        const active = stageId === currentStage;
+                                        const selected =
+                                            stageId === selectedStage;
+
+                                        return (
+                                            <button
+                                                key={stage.id}
+                                                type="button"
+                                                onClick={() =>
+                                                    setSelectedStage(stageId)
+                                                }
+                                                className="group flex min-w-0 flex-col items-center text-center focus:outline-none"
+                                            >
+                                                {/* CIRCLE */}
+                                                <div
+                                                    className={`
+                                    relative z-10 flex h-10 w-10
+                                    shrink-0 items-center justify-center
+                                    rounded-full border-2 bg-white
+                                    transition-all duration-200
+                                    ${
+                                        completed
+                                            ? "border-blue-600 bg-blue-600 text-white"
+                                            : active
+                                              ? "border-blue-600 text-blue-600"
+                                              : "border-slate-200 text-slate-300"
+                                    }
+                                    ${
+                                        selected
+                                            ? "ring-4 ring-blue-100"
+                                            : "group-hover:ring-4 group-hover:ring-slate-100"
+                                    }
+                                `}
+                                                >
+                                                    {completed ? (
+                                                        <Check className="h-4 w-4 stroke-[3]" />
+                                                    ) : (
+                                                        <span className="text-xs font-bold">
+                                                            {stage.id}
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {/* TEXT */}
+                                                <div className="mt-3 w-full px-1">
+                                                    <p
+                                                        className={`
+                                        text-xs font-bold leading-4
+                                        ${
+                                            selected
+                                                ? "text-blue-700"
+                                                : completed
+                                                  ? "text-slate-700"
+                                                  : "text-slate-400"
+                                        }
+                                    `}
+                                                    >
+                                                        {stage.name}
+                                                    </p>
+
+                                                    <p className="mt-1 line-clamp-2 text-[10px] leading-3 text-slate-400">
+                                                        {stage.department}
+                                                    </p>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* ============================================================
+        MOBILE STEPPER
+    ============================================================ */}
+                        <div className="md:hidden">
+                            <div className="relative">
+                                {PROCUREMENT_STAGES.map((stage, index) => {
+                                    const stageId = Number(stage.id);
+
+                                    const completed = stageId < currentStage;
+                                    const active = stageId === currentStage;
+                                    const selected = stageId === selectedStage;
 
                                     return (
-                                        <div
+                                        <button
                                             key={stage.id}
-                                            className="flex flex-col items-center text-center"
+                                            type="button"
+                                            onClick={() =>
+                                                setSelectedStage(stageId)
+                                            }
+                                            className={`
+                            relative flex w-full items-center gap-3
+                            rounded-xl border p-3 text-left
+                            transition
+                            ${
+                                selected
+                                    ? "border-blue-200 bg-blue-50/70"
+                                    : completed
+                                      ? "border-slate-100 bg-slate-50"
+                                      : "border-slate-100 bg-white"
+                            }
+                        `}
                                         >
+                                            {/* CONNECTOR */}
+                                            {index <
+                                                PROCUREMENT_STAGES.length -
+                                                    1 && (
+                                                <div
+                                                    className={`
+                                    absolute bottom-[-13px]
+                                    left-[22px] z-0 h-3 w-0.5
+                                    ${
+                                        completed
+                                            ? "bg-blue-600"
+                                            : "bg-slate-200"
+                                    }
+                                `}
+                                                />
+                                            )}
+
+                                            {/* CIRCLE */}
                                             <div
-                                                className={`relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 bg-white transition ${
-                                                    completed
-                                                        ? "border-blue-600 bg-blue-600 text-white"
-                                                        : active
-                                                          ? "border-blue-600 text-blue-600 shadow-[0_0_0_4px_rgba(37,99,235,0.08)]"
-                                                          : "border-slate-200 text-slate-300"
-                                                }`}
+                                                className={`
+                                relative z-10 flex h-10 w-10
+                                shrink-0 items-center justify-center
+                                rounded-full border-2
+                                ${
+                                    completed
+                                        ? "border-blue-600 bg-blue-600 text-white"
+                                        : active
+                                          ? "border-blue-600 bg-white text-blue-600"
+                                          : "border-slate-200 bg-white text-slate-300"
+                                }
+                            `}
                                             >
                                                 {completed ? (
-                                                    <Check className="h-4 w-4" />
+                                                    <Check className="h-4 w-4 stroke-[3]" />
                                                 ) : (
                                                     <span className="text-xs font-bold">
                                                         {stage.id}
@@ -336,22 +543,36 @@ export default function Show({ procurement }) {
                                                 )}
                                             </div>
 
-                                            <p
-                                                className={`mt-2 text-xs font-semibold ${
-                                                    active
-                                                        ? "text-blue-700"
-                                                        : completed
-                                                          ? "text-slate-700"
-                                                          : "text-slate-400"
-                                                }`}
-                                            >
-                                                {stage.name}
-                                            </p>
+                                            {/* CONTENT */}
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <p
+                                                        className={`
+                                        text-xs font-bold
+                                        ${
+                                            selected
+                                                ? "text-blue-700"
+                                                : completed
+                                                  ? "text-slate-700"
+                                                  : "text-slate-400"
+                                        }
+                                    `}
+                                                    >
+                                                        {stage.name}
+                                                    </p>
 
-                                            <p className="mt-0.5 hidden text-[10px] text-slate-400 lg:block">
-                                                {stage.department}
-                                            </p>
-                                        </div>
+                                                    {active && (
+                                                        <span className="shrink-0 rounded-full bg-blue-600 px-2 py-0.5 text-[9px] font-bold text-white">
+                                                            CURRENT
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                <p className="mt-1 text-[10px] text-slate-400">
+                                                    {stage.department}
+                                                </p>
+                                            </div>
+                                        </button>
                                     );
                                 })}
                             </div>
@@ -453,22 +674,22 @@ export default function Show({ procurement }) {
 
                                         <div>
                                             <h2 className="text-sm font-bold text-slate-900">
-                                                {currentStageInfo.name}
+                                                {selectedStageInfo.name}
                                             </h2>
 
                                             <p className="mt-1 text-xs text-slate-500">
-                                                {currentStageInfo.label}
+                                                {selectedStageInfo.label}
                                             </p>
                                         </div>
                                     </div>
 
                                     <div className="flex items-center gap-2">
                                         <span className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold text-blue-700">
-                                            Stage {currentStageInfo.id}
+                                            Stage {selectedStageInfo.id}
                                         </span>
 
                                         <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-medium text-slate-500">
-                                            {currentStageInfo.actor}
+                                            {selectedStageInfo.actor}
                                         </span>
                                     </div>
                                 </div>
@@ -485,7 +706,7 @@ export default function Show({ procurement }) {
                                         </p>
 
                                         <p className="mt-0.5 text-sm font-semibold text-blue-900">
-                                            {currentStageInfo.department}
+                                            {selectedStageInfo.department}
                                         </p>
                                     </div>
                                 </div>
@@ -493,10 +714,10 @@ export default function Show({ procurement }) {
                                 {/* Fields */}
                                 {currentStageInfo.fields.length > 0 ? (
                                     <div className="grid gap-3 sm:grid-cols-2">
-                                        {currentStageInfo.fields.map(
+                                        {selectedStageInfo.fields.map(
                                             (field) => {
                                                 const value =
-                                                    currentStageData[
+                                                    selectedStageData[
                                                         field.name
                                                     ];
 
@@ -546,7 +767,7 @@ export default function Show({ procurement }) {
                                 )}
 
                                 {/* Required Documents */}
-                                {currentStageInfo.docs?.length > 0 && (
+                                {selectedStageInfo.docs?.length > 0 && (
                                     <div className="mt-6 border-t border-slate-100 pt-5">
                                         <div className="mb-3 flex items-center justify-between">
                                             <div>
@@ -564,7 +785,7 @@ export default function Show({ procurement }) {
                                         </div>
 
                                         <div className="grid gap-2 sm:grid-cols-2">
-                                            {currentStageInfo.docs.map(
+                                            {selectedStageInfo.docs.map(
                                                 (document) => (
                                                     <div
                                                         key={document}
