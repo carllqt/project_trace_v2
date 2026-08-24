@@ -306,98 +306,193 @@ class ProcurementSeeder extends Seeder
         |--------------------------------------------------------------------------
         */
 
-        $additionalRecords = [
-            [
-                'title' => 'Procurement of Communication Equipment',
-                'purpose' => 'To improve official communication and coordination activities.',
-                'user' => 'ICT Coordinator',
-                'department' => 'ICTU',
-            ],
-            [
-                'title' => 'Purchase of Office Furniture',
-                'purpose' => 'To replace damaged and outdated office furniture.',
-                'user' => 'Administrative Officer',
-                'department' => 'AU',
-            ],
-            [
-                'title' => 'Procurement of Printing Supplies',
-                'purpose' => 'To support continuous printing of official documents and reports.',
-                'user' => 'Records Officer',
-                'department' => 'RU',
-            ],
-            [
-                'title' => 'Procurement of School Health Supplies',
-                'purpose' => 'To support school-based health and wellness activities.',
-                'user' => 'School Health and Nutrition Program Coordinator',
-                'department' => 'SHNU',
-            ],
-            [
-                'title' => 'Purchase of Monitoring Equipment',
-                'purpose' => 'To support monitoring and evaluation activities.',
-                'user' => 'Planning Officer',
-                'department' => 'PRU',
-            ],
-            [
-                'title' => 'Procurement of Curriculum Resources',
-                'purpose' => 'To support curriculum implementation and instructional supervision.',
-                'user' => 'CID Program Coordinator',
-                'department' => 'CID',
-            ],
-            [
-                'title' => 'Purchase of Training Equipment',
-                'purpose' => 'To support personnel development and training activities.',
-                'user' => 'SGOD Program Coordinator',
-                'department' => 'SGOD',
-            ],
-            [
-                'title' => 'Procurement of Cash Office Equipment',
-                'purpose' => 'To improve cash management and transaction processing.',
-                'user' => 'Cashier',
-                'department' => 'CU',
-            ],
-            [
-                'title' => 'Procurement of Supply Management Equipment',
-                'purpose' => 'To improve inventory and property management operations.',
-                'user' => 'Supply Officer',
-                'department' => 'SU',
-            ],
-            [
-                'title' => 'Procurement of Legal Office Supplies',
-                'purpose' => 'To support legal documentation and case management activities.',
-                'user' => 'Legal Officer',
-                'department' => 'LU',
-            ],
-            [
-                'title' => 'Purchase of Human Resource Supplies',
-                'purpose' => 'To support personnel records and human resource management activities.',
-                'user' => 'HR Management Officer',
-                'department' => 'HRMU',
-            ],
-            [
-                'title' => 'Procurement of Budget Planning Equipment',
-                'purpose' => 'To support budget preparation, monitoring, and reporting.',
-                'user' => 'Budget Officer',
-                'department' => 'BU',
-            ],
-            [
-                'title' => 'Procurement of Accounting Supplies',
-                'purpose' => 'To support financial reporting and accounting operations.',
-                'user' => 'Accountant',
-                'department' => 'ACU',
-            ],
-            [
-                'title' => 'Purchase of Records Storage Equipment',
-                'purpose' => 'To improve storage and preservation of official records.',
-                'user' => 'Records Officer',
-                'department' => 'RU',
-            ],
-            [
-                'title' => 'Procurement of Administrative Equipment',
-                'purpose' => 'To improve administrative service delivery and office operations.',
-                'user' => 'Administrative Officer',
-                'department' => 'AU',
-            ],
-        ];
+        /*
+        |--------------------------------------------------------------------------
+        | Additional Realistic Records
+        |--------------------------------------------------------------------------
+        */
+
+            $additionalRecords = [
+                [
+                    'title' => 'Procurement of Communication Equipment',
+                    'purpose' =>
+                        'To improve official communication, coordination, and information dissemination among offices and field personnel.',
+                    'user' => 'ICT Coordinator',
+                    'department' => 'ICTU',
+                    'abc' => 385000,
+                    'mode' => 'Small Value Procurement',
+                    'stage' => Procurement::STAGE_2,
+                    'current' => 'PU',
+                ],
+
+                [
+                    'title' => 'Purchase of Office Furniture and Fixtures',
+                    'purpose' =>
+                        'To replace worn-out office furniture and provide suitable workstations for personnel.',
+                    'user' => 'Administrative Officer',
+                    'department' => 'AU',
+                    'abc' => 465000,
+                    'mode' => 'Small Value Procurement',
+                    'stage' => Procurement::STAGE_1,
+                    'current' => 'AU',
+                ],
+
+                [
+                    'title' => 'Procurement of Printing Supplies',
+                    'purpose' =>
+                        'To ensure continuous availability of printing supplies required for official documents, reports, and records.',
+                    'user' => 'Records Officer',
+                    'department' => 'RU',
+                    'abc' => 215000,
+                    'mode' => 'Small Value Procurement',
+                    'stage' => Procurement::STAGE_2,
+                    'current' => 'PU',
+                ],
+
+                [
+                    'title' => 'Procurement of School Health Supplies',
+                    'purpose' =>
+                        'To provide essential supplies for school-based health, nutrition, and wellness activities.',
+                    'user' => 'School Health and Nutrition Program Coordinator',
+                    'department' => 'SHNU',
+                    'abc' => 395000,
+                    'mode' => 'Small Value Procurement',
+                    'stage' => Procurement::STAGE_3,
+                    'current' => 'PU',
+                ],
+
+                [
+                    'title' => 'Purchase of Monitoring and Evaluation Equipment',
+                    'purpose' =>
+                        'To support data gathering, monitoring, evaluation, and reporting activities of the Schools Division Office.',
+                    'user' => 'Planning Officer',
+                    'department' => 'PRU',
+                    'abc' => 520000,
+                    'mode' => 'Public Bidding',
+                    'stage' => Procurement::STAGE_4,
+                    'current' => 'PU',
+                ],
+
+                [
+                    'title' => 'Procurement of Curriculum Resources',
+                    'purpose' =>
+                        'To provide instructional resources and reference materials necessary for curriculum implementation and technical assistance.',
+                    'user' => 'CID Program Coordinator',
+                    'department' => 'CID',
+                    'abc' => 680000,
+                    'mode' => 'Public Bidding',
+                    'stage' => Procurement::STAGE_5,
+                    'current' => 'CID',
+                ],
+
+                [
+                    'title' => 'Purchase of Training Equipment',
+                    'purpose' =>
+                        'To support professional development, capacity-building activities, and training programs for teaching and non-teaching personnel.',
+                    'user' => 'SGOD Program Coordinator',
+                    'department' => 'SGOD',
+                    'abc' => 740000,
+                    'mode' => 'Public Bidding',
+                    'stage' => Procurement::STAGE_3,
+                    'current' => 'PU',
+                ],
+
+                [
+                    'title' => 'Procurement of Cash Office Equipment',
+                    'purpose' =>
+                        'To improve cash management, collection, disbursement, and transaction processing activities.',
+                    'user' => 'Cashier',
+                    'department' => 'CU',
+                    'abc' => 195000,
+                    'mode' => 'Small Value Procurement',
+                    'stage' => Procurement::STAGE_2,
+                    'current' => 'PU',
+                ],
+
+                [
+                    'title' => 'Procurement of Supply Management Equipment',
+                    'purpose' =>
+                        'To improve inventory management, property accountability, stock monitoring, and issuance of supplies.',
+                    'user' => 'Supply Officer',
+                    'department' => 'SU',
+                    'abc' => 325000,
+                    'mode' => 'Small Value Procurement',
+                    'stage' => Procurement::STAGE_4,
+                    'current' => 'SU',
+                ],
+
+                [
+                    'title' => 'Procurement of Legal Reference Materials',
+                    'purpose' =>
+                        'To provide updated legal references, jurisprudence, and other materials necessary for legal review and advisory services.',
+                    'user' => 'Legal Officer',
+                    'department' => 'LU',
+                    'abc' => 145000,
+                    'mode' => 'Shopping',
+                    'stage' => Procurement::STAGE_1,
+                    'current' => 'LU',
+                ],
+
+                [
+                    'title' => 'Purchase of Human Resource Management Supplies',
+                    'purpose' =>
+                        'To support personnel records management, employee documentation, recruitment, and human resource activities.',
+                    'user' => 'HR Management Officer',
+                    'department' => 'HRMU',
+                    'abc' => 165000,
+                    'mode' => 'Shopping',
+                    'stage' => Procurement::STAGE_2,
+                    'current' => 'PU',
+                ],
+
+                [
+                    'title' => 'Procurement of Budget Planning Equipment',
+                    'purpose' =>
+                        'To support budget preparation, financial planning, monitoring, and reporting activities.',
+                    'user' => 'Budget Officer',
+                    'department' => 'BU',
+                    'abc' => 285000,
+                    'mode' => 'Small Value Procurement',
+                    'stage' => Procurement::STAGE_3,
+                    'current' => 'BU',
+                ],
+
+                [
+                    'title' => 'Procurement of Accounting Office Equipment',
+                    'purpose' =>
+                        'To improve financial reporting, accounting operations, document processing, and records management.',
+                    'user' => 'Accountant',
+                    'department' => 'ACU',
+                    'abc' => 415000,
+                    'mode' => 'Small Value Procurement',
+                    'stage' => Procurement::STAGE_4,
+                    'current' => 'ACU',
+                ],
+
+                [
+                    'title' => 'Purchase of Records Storage Equipment',
+                    'purpose' =>
+                        'To improve the secure storage, organization, preservation, and retrieval of official records.',
+                    'user' => 'Records Officer',
+                    'department' => 'RU',
+                    'abc' => 375000,
+                    'mode' => 'Small Value Procurement',
+                    'stage' => Procurement::STAGE_5,
+                    'current' => 'RU',
+                ],
+
+                [
+                    'title' => 'Procurement of Administrative Equipment',
+                    'purpose' =>
+                        'To improve administrative service delivery and support the day-to-day operations of the Schools Division Office.',
+                    'user' => 'Administrative Officer',
+                    'department' => 'AU',
+                    'abc' => 550000,
+                    'mode' => 'Public Bidding',
+                    'stage' => Procurement::STAGE_7,
+                    'current' => 'AU',
+                ],
+            ];
 
         foreach ($additionalRecords as $index => $record) {
             $number = $index + 16;
@@ -418,46 +513,15 @@ class ProcurementSeeder extends Seeder
                     $record['department']
                 ),
 
-                'abc' => fake()->randomFloat(
-                    2,
-                    75000,
-                    1500000
+                'abc' => $record['abc'],
+
+                'mode_of_procurement' => $record['mode'],
+
+                'status' => $record['stage'],
+
+                'current_department_id' => $department(
+                    $record['current']
                 ),
-
-                'mode_of_procurement' => fake()->randomElement([
-                    'Small Value Procurement',
-                    'Public Bidding',
-                    'Shopping',
-                    'Negotiated Procurement',
-                ]),
-
-                'status' => fake()->randomElement([
-                    Procurement::STAGE_1,
-                    Procurement::STAGE_2,
-                    Procurement::STAGE_3,
-                    Procurement::STAGE_4,
-                    Procurement::STAGE_5,
-                    Procurement::STAGE_6,
-                    Procurement::STAGE_7,
-                ]),
-
-                /*
-                |--------------------------------------------------------------------------
-                | Current Department
-                |--------------------------------------------------------------------------
-                |
-                | Some are still with the End User while others are already
-                | being processed by Procurement, Accounting, Budget, etc.
-                |
-                */
-
-                'current_department_id' => fake()->randomElement([
-                    $department($record['department']),
-                    $department('PU'),
-                    $department('ACU'),
-                    $department('BU'),
-                    $department('SU'),
-                ]),
             ];
         }
 

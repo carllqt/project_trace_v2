@@ -26,6 +26,7 @@ export default function Index({ incomingPRs, filters = {}, department }) {
     const [selectedProcurement, setSelectedProcurement] = useState(null);
     const [isProcurementModalOpen, setIsProcurementModalOpen] = useState(false);
     const [isLoadingProcurement, setIsLoadingProcurement] = useState(false);
+    const [receivingRoute, setReceivingRoute] = useState(null);
     const { auth, flash } = usePage().props;
 
     const user = auth?.user;
@@ -76,6 +77,8 @@ export default function Index({ incomingPRs, filters = {}, department }) {
         }
     };
     const handleReceive = (routeId) => {
+        if (receivingRoute) return;
+
         router.post(
             route("procurement-routes.receive", routeId),
             {},
@@ -86,14 +89,27 @@ export default function Index({ incomingPRs, filters = {}, department }) {
                     setReceivingRoute(routeId);
                 },
 
+                onSuccess: () => {
+                    // Laravel session flash will be handled
+                    // by the flash useEffect above.
+                },
+
+                onError: (errors) => {
+                    console.error("Receive error:", errors);
+
+                    toast.error("Failed to receive procurement.");
+                },
+
                 onFinish: () => {
                     setReceivingRoute(null);
                 },
             },
         );
     };
+
     const handleClose = () => {
         setSelectedProcurement(null);
+        setIsProcurementModalOpen(false);
     };
     const columns = [
         {

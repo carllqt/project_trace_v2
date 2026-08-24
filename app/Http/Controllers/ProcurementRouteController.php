@@ -257,7 +257,7 @@ class ProcurementRouteController extends Controller
 
             return back()->with(
                 'success',
-                'Procurement route received successfully.'
+                'Procurement Request received successfully.'
             );
 
         } catch (\Throwable $e) {

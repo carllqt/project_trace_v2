@@ -58,13 +58,13 @@ class ProcurementRouteSeeder extends Seeder
         |--------------------------------------------------------------------------
         */
 
-        $admin = User::whereHas('roles', function ($query) {
+        $forwardedBy = User::whereHas('roles', function ($query) {
             $query->where('name', 'admin');
-        })->first();
+        })->value('id');
 
-        $user = User::where('role', 'user')->first();
-
-        $forwardedBy = $admin?->id ?? $user?->id;
+        if (!$forwardedBy) {
+            $forwardedBy = User::where('role', 'user')->value('id');
+        }
 
         if (!$forwardedBy) {
             $this->command->warn(
@@ -78,9 +78,6 @@ class ProcurementRouteSeeder extends Seeder
         |--------------------------------------------------------------------------
         | Clear Existing Routes
         |--------------------------------------------------------------------------
-        |
-        | Recommended while developing/seeding test data.
-        |
         */
 
         ProcurementRoute::query()->delete();
@@ -105,26 +102,111 @@ class ProcurementRouteSeeder extends Seeder
     }
 
     /**
-     * Create routing history for a procurement.
+     * Create routing history for one procurement.
      */
     private function seedRoutesForProcurement(
         Procurement $procurement,
         int $forwardedBy,
         $departments
     ): void {
+        $pu = $departments->get('PU');
+        $acu = $departments->get('ACU');
+        $bu = $departments->get('BU');
+        $cu = $departments->get('CU');
+        $su = $departments->get('SU');
+
+        $endUser = $procurement->end_user_department_id;
+
         /*
         |--------------------------------------------------------------------------
-        | Department IDs
+        | Determine Current Stage
         |--------------------------------------------------------------------------
         */
 
-        $procurementUnit = $departments->get('PU');
-        $accountingUnit = $departments->get('ACU');
-        $budgetUnit = $departments->get('BU');
-        $cashUnit = $departments->get('CU');
-        $supplyUnit = $departments->get('SU');
+        $stageNumber = (int) str_replace(
+            'stage_',
+            '',
+            $procurement->status
+        );
 
-        $endUserDepartment = $procurement->end_user_department_id;
+        /*
+        |--------------------------------------------------------------------------
+        | Realistic Workflow
+        |--------------------------------------------------------------------------
+        |
+        | Stage 1:
+        | End User → Procurement Unit
+        |
+        | Stage 2:
+        | Procurement Unit → Accounting
+        |
+        | Stage 3:
+        | Accounting → Budget
+        |
+        | Stage 4:
+        | Budget → Cash
+        |
+        | Stage 5:
+        | Cash → Supply
+        |
+        | Stage 6:
+        | Supply → Procurement
+        |
+        | Stage 7:
+        | Procurement → End User
+        |
+        */
+
+        $workflow = [
+            1 => [
+                'from' => $endUser,
+                'to' => $pu,
+                'remarks' =>
+                    'Purchase request forwarded to Procurement Unit for processing.',
+            ],
+
+            2 => [
+                'from' => $pu,
+                'to' => $acu,
+                'remarks' =>
+                    'Procurement documents processed and forwarded to Accounting Unit for review.',
+            ],
+
+            3 => [
+                'from' => $acu,
+                'to' => $bu,
+                'remarks' =>
+                    'Financial documents reviewed and forwarded to Budget Unit for certification.',
+            ],
+
+            4 => [
+                'from' => $bu,
+                'to' => $cu,
+                'remarks' =>
+                    'Budget certification completed and documents forwarded to Cash Unit.',
+            ],
+
+            5 => [
+                'from' => $cu,
+                'to' => $su,
+                'remarks' =>
+                    'Payment processing completed and documents forwarded to Supply Unit.',
+            ],
+
+            6 => [
+                'from' => $su,
+                'to' => $pu,
+                'remarks' =>
+                    'Supply processing completed and procurement documents returned to Procurement Unit.',
+            ],
+
+            7 => [
+                'from' => $pu,
+                'to' => $endUser,
+                'remarks' =>
+                    'Procurement processing completed and documents forwarded to the End User.',
+            ],
+        ];
 
         /*
         |--------------------------------------------------------------------------
@@ -133,191 +215,87 @@ class ProcurementRouteSeeder extends Seeder
         */
 
         $baseDate = Carbon::now()
-            ->subDays(15)
-            ->addDays($procurement->id % 7)
-            ->setTime(9, 0);
+            ->subDays(30)
+            ->addDays(($procurement->id - 1) % 15)
+            ->setTime(8, 30);
 
         /*
         |--------------------------------------------------------------------------
-        | Determine Procurement Progress
+        | Create Previous Routes
         |--------------------------------------------------------------------------
         |
-        | Different PRs are placed at different points in the process.
+        | If the procurement is currently at Stage N,
+        | create the route history leading up to Stage N.
         |
         */
 
-        $progress = (($procurement->id - 1) % 7) + 1;
+        for ($stage = 1; $stage <= $stageNumber; $stage++) {
+            if (!isset($workflow[$stage])) {
+                continue;
+            }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Route Definitions
-        |--------------------------------------------------------------------------
-        */
-
-        $routes = [];
-
-        /*
-        |--------------------------------------------------------------------------
-        | 1. End User → Procurement
-        |--------------------------------------------------------------------------
-        */
-
-        $routes[] = [
-            'from_department_id' => $endUserDepartment,
-            'to_department_id' => $procurementUnit,
-            'stage' => Procurement::STAGE_1,
-            'action' => 'Forwarded',
-            'remarks' =>
-                'Purchase request forwarded to Procurement Unit for processing.',
-        ];
-
-        /*
-        |--------------------------------------------------------------------------
-        | 2. Procurement → Accounting
-        |--------------------------------------------------------------------------
-        */
-
-        if ($progress >= 2) {
-            $routes[] = [
-                'from_department_id' => $procurementUnit,
-                'to_department_id' => $accountingUnit,
-                'stage' => Procurement::STAGE_2,
-                'action' => 'Forwarded',
-                'remarks' =>
-                    'Procurement documents processed and forwarded to Accounting Unit for review.',
-            ];
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | 3. Accounting → Budget
-        |--------------------------------------------------------------------------
-        */
-
-        if ($progress >= 3) {
-            $routes[] = [
-                'from_department_id' => $accountingUnit,
-                'to_department_id' => $budgetUnit,
-                'stage' => Procurement::STAGE_3,
-                'action' => 'Forwarded',
-                'remarks' =>
-                    'Financial documents reviewed and forwarded to Budget Unit for certification.',
-            ];
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | 4. Budget → Cash
-        |--------------------------------------------------------------------------
-        */
-
-        if ($progress >= 4) {
-            $routes[] = [
-                'from_department_id' => $budgetUnit,
-                'to_department_id' => $cashUnit,
-                'stage' => Procurement::STAGE_4,
-                'action' => 'Forwarded',
-                'remarks' =>
-                    'Budget certification completed and documents forwarded to Cash Unit.',
-            ];
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | 5. Cash → Supply
-        |--------------------------------------------------------------------------
-        */
-
-        if ($progress >= 5) {
-            $routes[] = [
-                'from_department_id' => $cashUnit,
-                'to_department_id' => $supplyUnit,
-                'stage' => Procurement::STAGE_5,
-                'action' => 'Forwarded',
-                'remarks' =>
-                    'Payment processing completed and documents forwarded to Supply Unit.',
-            ];
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | 6. Supply → Procurement
-        |--------------------------------------------------------------------------
-        */
-
-        if ($progress >= 6) {
-            $routes[] = [
-                'from_department_id' => $supplyUnit,
-                'to_department_id' => $procurementUnit,
-                'stage' => Procurement::STAGE_6,
-                'action' => 'Forwarded',
-                'remarks' =>
-                    'Supply processing completed and procurement documents returned to Procurement Unit.',
-            ];
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Create Routes
-        |--------------------------------------------------------------------------
-        */
-
-        foreach ($routes as $index => $route) {
+            $route = $workflow[$stage];
 
             $forwardedAt = $baseDate
                 ->copy()
-                ->addDays($index)
+                ->addDays(($stage - 1) * 2)
                 ->setTime(
-                    9 + ($index % 3),
+                    8 + (($procurement->id + $stage) % 3),
                     30
                 );
 
             /*
             |--------------------------------------------------------------------------
-            | Last Route
+            | Current Route
             |--------------------------------------------------------------------------
             |
-            | Every 3rd procurement is intentionally left unreceived.
-            | This creates realistic Incoming PRs.
+            | Some current routes remain unreceived so they appear
+            | on the Incoming page.
             |
             */
 
-            $isLastRoute = $index === array_key_last($routes);
+            $isCurrentRoute = $stage === $stageNumber;
 
-            $shouldRemainIncoming =
-                $isLastRoute &&
-                in_array(
-                    $procurement->id % 3,
-                    [1, 2]
-                );
+            /*
+            | Rough distribution:
+            |
+            | PR 1 → received
+            | PR 2 → incoming
+            | PR 3 → received
+            | PR 4 → incoming
+            | ...
+            |
+            */
 
-            if ($shouldRemainIncoming) {
+            $isIncoming =
+                $isCurrentRoute &&
+                ($procurement->id % 2 === 0);
 
+            /*
+            |--------------------------------------------------------------------------
+            | Incoming Route
+            |--------------------------------------------------------------------------
+            */
+
+            if ($isIncoming) {
                 ProcurementRoute::create([
                     'procurement_id' => $procurement->id,
 
-                    'from_department_id' =>
-                        $route['from_department_id'],
+                    'from_department_id' => $route['from'],
 
-                    'to_department_id' =>
-                        $route['to_department_id'],
+                    'to_department_id' => $route['to'],
 
-                    'forwarded_by' =>
-                        $forwardedBy,
+                    'forwarded_by' => $forwardedBy,
 
                     'received_by' => null,
 
-                    'stage' =>
-                        $route['stage'],
+                    'stage' => Procurement::stageFromNumber($stage),
 
-                    'action' =>
-                        $route['action'],
+                    'action' => 'Forwarded',
 
-                    'remarks' =>
-                        $route['remarks'],
+                    'remarks' => $route['remarks'],
 
-                    'forwarded_at' =>
-                        $forwardedAt,
+                    'forwarded_at' => $forwardedAt,
 
                     'received_at' => null,
                 ]);
@@ -329,8 +307,7 @@ class ProcurementRouteSeeder extends Seeder
                 */
 
                 $procurement->update([
-                    'current_department_id' =>
-                        $route['to_department_id'],
+                    'current_department_id' => $route['to'],
                 ]);
 
                 continue;
@@ -338,59 +315,50 @@ class ProcurementRouteSeeder extends Seeder
 
             /*
             |--------------------------------------------------------------------------
-            | Normal Received Route
+            | Received Route
             |--------------------------------------------------------------------------
             */
 
             $receivedAt = $forwardedAt
                 ->copy()
-                ->addHours(3);
+                ->addHours(2)
+                ->addMinutes(
+                    ($procurement->id + $stage) % 45
+                );
 
             ProcurementRoute::create([
-                'procurement_id' =>
-                    $procurement->id,
+                'procurement_id' => $procurement->id,
 
-                'from_department_id' =>
-                    $route['from_department_id'],
+                'from_department_id' => $route['from'],
 
-                'to_department_id' =>
-                    $route['to_department_id'],
+                'to_department_id' => $route['to'],
 
-                'forwarded_by' =>
-                    $forwardedBy,
+                'forwarded_by' => $forwardedBy,
 
-                'received_by' =>
-                    $forwardedBy,
+                'received_by' => $forwardedBy,
 
-                'stage' =>
-                    $route['stage'],
+                'stage' => Procurement::stageFromNumber($stage),
 
-                'action' =>
-                    $route['action'],
+                'action' => 'Forwarded',
 
-                'remarks' =>
-                    $route['remarks'],
+                'remarks' => $route['remarks'],
 
-                'forwarded_at' =>
-                    $forwardedAt,
+                'forwarded_at' => $forwardedAt,
 
-                'received_at' =>
-                    $receivedAt,
+                'received_at' => $receivedAt,
             ]);
         }
 
         /*
         |--------------------------------------------------------------------------
-        | Current Department
+        | Ensure Current Department Matches Current Stage
         |--------------------------------------------------------------------------
         */
 
-        $lastRoute = end($routes);
-
-        if ($lastRoute) {
+        if (isset($workflow[$stageNumber])) {
             $procurement->update([
                 'current_department_id' =>
-                    $lastRoute['to_department_id'],
+                    $workflow[$stageNumber]['to'],
             ]);
         }
     }
