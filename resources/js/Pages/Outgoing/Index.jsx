@@ -13,6 +13,7 @@ import {
 import MainLayout from "@/Layouts/MainLayout";
 import DynamicTable from "@/Components/DynamicTable";
 import FilterToggle from "@/Components/FilterButtons/FillterToggle";
+import BreadCrumbsHeader from "@/Components/BreadcrumbsHeader";
 
 export default function Index({
     outgoingPRs,
@@ -70,13 +71,6 @@ export default function Index({
             key: "receipt_status",
             label: "Route Status",
         },
-
-        // {
-        //     key: "actions",
-        //     label: "Action",
-        //     className: "text-right",
-        //     cellClassName: "text-right",
-        // },
     ];
     /*
     |--------------------------------------------------------------------------
@@ -245,27 +239,6 @@ export default function Index({
                 </span>
             );
         },
-
-        /*
-    |--------------------------------------------------------------------------
-    | Actions
-    |--------------------------------------------------------------------------
-    */
-
-        // actions: (row) => (
-        //     <button
-        //         type="button"
-        //         onClick={(event) => {
-        //             event.stopPropagation();
-
-        //             router.visit(route("procurement.details", row.id));
-        //         }}
-        //         className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-600 shadow-sm transition-all hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
-        //     >
-        //         <Eye className="h-3.5 w-3.5" />
-        //         View Details
-        //     </button>
-        // ),
     };
 
     /*
@@ -274,15 +247,10 @@ export default function Index({
     |--------------------------------------------------------------------------
     */
 
-    const handleRowClick = (row) => {
-        const procurementId = row.procurement_id ?? row.procurement?.id;
-
-        if (!procurementId) return;
-    };
-
     return (
         <MainLayout>
             <Head title="Outgoing Purchase Requests" />
+            <BreadCrumbsHeader breadcrumbs={breadcrumbs} />
             <div className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-7">
                 <div className="space-y-5">
                     {/* Header */}
@@ -343,7 +311,6 @@ export default function Index({
                         columnRenderers={columnRenderers}
                         pagination={outgoingPRs}
                         queryParams={queryParams}
-                        onRowClick={handleRowClick}
                         emptyMessage="No outgoing purchase requests"
                         emptyDescription={`There are currently no purchase requests forwarded from ${
                             department ?? "your department"

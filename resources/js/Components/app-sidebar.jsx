@@ -39,6 +39,7 @@ export function AppSidebar({ ...props }) {
 
     const hasNoDepartment =
         user?.department_id === null || user?.department_id === undefined;
+    const isAdminWithoutDepartment = isAdmin && hasNoDepartment;
     const userNavItems = [
         {
             title: "Dashboard",
@@ -53,9 +54,7 @@ export function AppSidebar({ ...props }) {
         },
         {
             title: "Incoming PRs",
-            href: route("incoming.index", {
-                type: "incoming",
-            }),
+            href: route("incoming.index"),
             icon: ArrowDownToLineIcon,
 
             // RED BADGE
@@ -63,7 +62,7 @@ export function AppSidebar({ ...props }) {
         },
         {
             title: "Outgoing PRs",
-            href: route("outgoing.index", { type: "outgoing" }),
+            href: route("outgoing.index"),
             icon: ArrowUpFromLineIcon,
         },
         {
@@ -90,21 +89,21 @@ export function AppSidebar({ ...props }) {
             href: route("procurement.index"),
             icon: HistoryIcon,
         },
-        {
-            title: "Incoming PRs",
-            href: route("incoming.index", {
-                type: "incoming",
-            }),
-            icon: ArrowDownToLineIcon,
-
-            // RED BADGE
-            badge: incomingPRCount,
-        },
-        {
-            title: "Outgoing PRs",
-            href: route("outgoing.index", { type: "outgoing" }),
-            icon: ArrowUpFromLineIcon,
-        },
+        ...(!isAdminWithoutDepartment
+            ? [
+                  {
+                      title: "Incoming PRs",
+                      href: route("incoming.index"),
+                      icon: ArrowDownToLineIcon,
+                      badge: incomingPRCount,
+                  },
+                  {
+                      title: "Outgoing PRs",
+                      href: route("outgoing.index"),
+                      icon: ArrowUpFromLineIcon,
+                  },
+              ]
+            : []),
         {
             title: "Routing History",
             href: route("route.index"),

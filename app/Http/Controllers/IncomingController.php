@@ -18,42 +18,32 @@ class IncomingController extends Controller
         $query = ProcurementRoute::query()
             ->with([
                 'procurement:id,pr_no,project_title,purpose,end_user_department_id,current_department_id,abc,mode_of_procurement,status,date_of_implementation',
-
                 'procurement.endUserDepartment:id,name,code',
-
                 'procurement.currentDepartment:id,name,code',
-
                 'fromDepartment:id,name,code',
-
                 'toDepartment:id,name,code',
-
                 'forwardedBy:id,name,position',
-
                 'receivedBy:id,name,position',
             ])
 
             /*
             |--------------------------------------------------------------------------
-            | Incoming PR
+            | Only the LATEST route of each procurement
             |--------------------------------------------------------------------------
-            |
-            | The PR must currently be assigned to the logged-in user's department.
-            |
             */
-
-            ->whereHas('procurement', function ($q) use ($user) {
-                $q->where(
-                    'current_department_id',
-                    $user->department_id
-                );
+            ->whereIn('id', function ($subQuery) {
+                $subQuery
+                    ->selectRaw('MAX(id)')
+                    ->from('procurement_routes')
+                    ->where('action', 'Forwarded')
+                    ->groupBy('procurement_id');
             })
 
             /*
             |--------------------------------------------------------------------------
-            | Route destination
+            | Latest route must be forwarded TO user's department
             |--------------------------------------------------------------------------
             */
-
             ->where(
                 'to_department_id',
                 $user->department_id
@@ -61,19 +51,10 @@ class IncomingController extends Controller
 
             /*
             |--------------------------------------------------------------------------
-            | Only forwarded documents
+            | Latest route must be Forwarded
             |--------------------------------------------------------------------------
             */
-
-            ->where('action', 'Forwarded')
-
-            /*
-            |--------------------------------------------------------------------------
-            | Not yet received
-            |--------------------------------------------------------------------------
-            */
-
-            ->whereNull('received_by');
+            ->where('action', 'Forwarded');
 
 
         /*
@@ -81,7 +62,6 @@ class IncomingController extends Controller
         | Search
         |--------------------------------------------------------------------------
         */
-
         if ($request->filled('search')) {
             $search = trim($request->search);
 
@@ -96,6 +76,8 @@ class IncomingController extends Controller
                 });
             });
         }
+
+
         /*
         |--------------------------------------------------------------------------
         | Stage Filter
@@ -105,11 +87,10 @@ class IncomingController extends Controller
             $request->filled('stage') &&
             $request->stage !== 'all'
         ) {
-            $query->where(
-                'stage',
-                $request->stage
-            );
+            $query->where('stage', $request->stage);
         }
+
+
         /*
         |--------------------------------------------------------------------------
         | Date From
@@ -122,6 +103,8 @@ class IncomingController extends Controller
                 $request->date_from
             );
         }
+
+
         /*
         |--------------------------------------------------------------------------
         | Date To
@@ -134,6 +117,8 @@ class IncomingController extends Controller
                 $request->date_to
             );
         }
+
+
         /*
         |--------------------------------------------------------------------------
         | Pagination
@@ -143,21 +128,31 @@ class IncomingController extends Controller
             ->orderByDesc('forwarded_at')
             ->paginate(10)
             ->withQueryString();
+
+
         /*
         |--------------------------------------------------------------------------
         | Available Stages
         |--------------------------------------------------------------------------
         */
         $stages = ProcurementRoute::query()
+            ->whereIn('id', function ($subQuery) {
+                $subQuery
+                    ->selectRaw('MAX(id)')
+                    ->from('procurement_routes')
+                    ->where('action', 'Forwarded')
+                    ->groupBy('procurement_id');
+            })
             ->where(
                 'to_department_id',
                 $user->department_id
             )
             ->where('action', 'Forwarded')
-            ->whereNull('received_by')
             ->distinct()
             ->orderBy('stage')
             ->pluck('stage');
+
+
         /*
         |--------------------------------------------------------------------------
         | Response
@@ -165,13 +160,16 @@ class IncomingController extends Controller
         */
         return Inertia::render('Incoming/Index', [
             'incomingPRs' => $incomingPRs,
+
             'stages' => $stages,
+
             'filters' => [
                 'search' => $request->search ?? '',
-                'stage' => $request->stage ?? 'all',
+                'stage' => $request->stage ?? '',
                 'date_from' => $request->date_from ?? '',
                 'date_to' => $request->date_to ?? '',
             ],
+
             'department' => $user->department?->name,
             'departmentId' => $user->department_id,
         ]);

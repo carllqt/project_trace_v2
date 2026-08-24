@@ -4,6 +4,7 @@ import {
     ArrowDownToLine,
     Building2,
     CalendarDays,
+    CheckCircle2Icon,
     ChevronRight,
     Clock3,
     Eye,
@@ -16,7 +17,9 @@ import DynamicTable from "@/Components/DynamicTable";
 import FilterToggle from "@/Components/FilterButtons/FillterToggle";
 import BreadCrumbsHeader from "@/Components/BreadcrumbsHeader";
 import ProcurementDrawerModal from "../Procurement/ProcurementDrawerModal";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { toast } from "sonner";
 
 export default function Index({ incomingPRs, filters = {}, department }) {
     const queryParams = filters;
@@ -33,6 +36,15 @@ export default function Index({ incomingPRs, filters = {}, department }) {
             showOnMobile: true,
         },
     ];
+    useEffect(() => {
+        if (flash?.success) {
+            toast.success(flash.success);
+        }
+
+        if (flash?.error) {
+            toast.error(flash.error);
+        }
+    }, [flash]);
     const handleViewProcurement = async (procurementId) => {
         try {
             setIsLoadingProcurement(true);
@@ -63,6 +75,23 @@ export default function Index({ incomingPRs, filters = {}, department }) {
             setIsLoadingProcurement(false);
         }
     };
+    const handleReceive = (routeId) => {
+        router.post(
+            route("procurement-routes.receive", routeId),
+            {},
+            {
+                preserveScroll: true,
+
+                onStart: () => {
+                    setReceivingRoute(routeId);
+                },
+
+                onFinish: () => {
+                    setReceivingRoute(null);
+                },
+            },
+        );
+    };
     const handleClose = () => {
         setSelectedProcurement(null);
     };
@@ -75,10 +104,6 @@ export default function Index({ incomingPRs, filters = {}, department }) {
         {
             key: "project_title",
             label: "Procurement",
-        },
-        {
-            key: "end_user",
-            label: "End User",
         },
         {
             key: "origin_department",
@@ -137,22 +162,6 @@ export default function Index({ incomingPRs, filters = {}, department }) {
             </div>
         ),
 
-        end_user: (row) => (
-            <div className="flex min-w-[180px] items-center gap-2">
-                <UserRound className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-
-                <div>
-                    <p className="font-semibold text-slate-700">
-                        {row.procurement?.end_user ?? "-"}
-                    </p>
-
-                    <p className="text-[10px] text-slate-400">
-                        {row.procurement?.end_user_department?.name ?? "-"}
-                    </p>
-                </div>
-            </div>
-        ),
-
         origin_department: (row) => (
             <div className="flex min-w-[160px] items-center gap-2">
                 <Building2 className="h-3.5 w-3.5 text-slate-400" />
@@ -193,40 +202,66 @@ export default function Index({ incomingPRs, filters = {}, department }) {
             </div>
         ),
 
-        status: () => (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-600 ring-1 ring-amber-100">
-                <Clock3 className="h-3 w-3" />
-                Awaiting Receipt
-            </span>
-        ),
-        actions: (procurement) => (
-            <div className="flex items-center justify-end">
-                <button
-                    type="button"
-                    onClick={() =>
-                        handleViewProcurement(procurement.procurement.id)
-                    }
-                    title={`View procurement ${procurement.procurement.pr_no}`}
-                    aria-label={`View procurement ${procurement.procurement.pr_no}`}
-                    className="group inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200/80 bg-white px-3 text-slate-500 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 hover:shadow-[0_4px_12px_rgba(37,99,235,0.10)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:ring-offset-1 active:translate-y-0"
-                >
-                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100/80 transition-all duration-200 group-hover:bg-blue-100 group-hover:text-blue-600">
-                        <ArrowBigRightDashIcon className="h-3.5 w-3.5 transition-transform duration-200 group-hover:scale-110" />
-                    </span>
+        status: (procurement) => {
+            const isReceived = Boolean(procurement.received_by);
 
-                    <span className="text-[11px] font-bold tracking-wide">
-                        Dispatch
-                    </span>
-                </button>
-            </div>
-        ),
-    };
-    const handleRowClick = (row) => {
-        const procurementId = row.procurement_id ?? row.procurement?.id;
+            return isReceived ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-600 ring-1 ring-emerald-100">
+                    <CheckCircle2Icon className="h-3 w-3" />
+                    Received
+                </span>
+            ) : (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-600 ring-1 ring-amber-100">
+                    <Clock3 className="h-3 w-3" />
+                    Awaiting Receipt
+                </span>
+            );
+        },
+        actions: (procurement) => {
+            const isReceived = Boolean(procurement.received_by);
 
-        if (!procurementId) return;
+            return (
+                <div className="flex items-center justify-end">
+                    {!isReceived ? (
+                        <button
+                            type="button"
+                            onClick={() => handleReceive(procurement.id)}
+                            title={`Receive ${procurement.procurement.pr_no}`}
+                            aria-label={`Receive ${procurement.procurement.pr_no}`}
+                            className="group inline-flex h-9 items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-emerald-600 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-100 hover:text-emerald-700 hover:shadow-[0_4px_12px_rgba(16,185,129,0.10)] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:ring-offset-1 active:translate-y-0"
+                        >
+                            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-100 transition-all duration-200 group-hover:bg-emerald-200">
+                                <CheckCircle2Icon className="h-3.5 w-3.5" />
+                            </span>
 
-        handleViewProcurement(procurementId);
+                            <span className="text-[11px] font-bold tracking-wide">
+                                Receive
+                            </span>
+                        </button>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={() =>
+                                handleViewProcurement(
+                                    procurement.procurement.id,
+                                )
+                            }
+                            title={`Dispatch ${procurement.procurement.pr_no}`}
+                            aria-label={`Dispatch ${procurement.procurement.pr_no}`}
+                            className="group inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200/80 bg-white px-3 text-slate-500 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600 hover:shadow-[0_4px_12px_rgba(37,99,235,0.10)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:ring-offset-1 active:translate-y-0"
+                        >
+                            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100/80 transition-all duration-200 group-hover:bg-blue-100 group-hover:text-blue-600">
+                                <ArrowBigRightDashIcon className="h-3.5 w-3.5 transition-transform duration-200 group-hover:scale-110" />
+                            </span>
+
+                            <span className="text-[11px] font-bold tracking-wide">
+                                Dispatch
+                            </span>
+                        </button>
+                    )}
+                </div>
+            );
+        },
     };
 
     return (
@@ -288,7 +323,6 @@ export default function Index({ incomingPRs, filters = {}, department }) {
                         columnRenderers={columnRenderers}
                         pagination={incomingPRs}
                         queryParams={queryParams}
-                        onRowClick={handleRowClick}
                         emptyMessage="No incoming purchase requests"
                         emptyDescription={`There are currently no purchase requests waiting to be received by ${
                             department ?? "your department"

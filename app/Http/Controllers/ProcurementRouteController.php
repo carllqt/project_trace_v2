@@ -204,4 +204,75 @@ class ProcurementRouteController extends Controller
     {
         //
     }
+    public function receive(ProcurementRoute $route)
+    {
+        try {
+            $user = auth()->user();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Authorization
+            |--------------------------------------------------------------------------
+            */
+            if ($route->to_department_id !== $user->department_id) {
+                return back()->with(
+                    'error',
+                    'You are not authorized to receive this procurement route.'
+                );
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Route must be forwarded
+            |--------------------------------------------------------------------------
+            */
+            if ($route->action !== 'Forwarded') {
+                return back()->with(
+                    'error',
+                    'Only forwarded procurement routes can be received.'
+                );
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Prevent duplicate receipt
+            |--------------------------------------------------------------------------
+            */
+            if ($route->received_at || $route->received_by) {
+                return back()->with(
+                    'error',
+                    'This procurement route has already been received.'
+                );
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Receive route
+            |--------------------------------------------------------------------------
+            */
+            $route->update([
+                'received_at' => now(),
+                'received_by' => $user->id,
+            ]);
+
+            return back()->with(
+                'success',
+                'Procurement route received successfully.'
+            );
+
+        } catch (\Throwable $e) {
+
+            \Log::error('Procurement route receive failed', [
+                'route_id' => $route->id,
+                'procurement_id' => $route->procurement_id,
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with(
+                'error',
+                'Failed to receive the procurement route. Please try again.'
+            );
+        }
+    }
 }

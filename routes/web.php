@@ -5,6 +5,7 @@ use App\Http\Controllers\CAPAController;
 use App\Http\Controllers\IncomingController;
 use App\Http\Controllers\OutgoingController;
 use App\Http\Controllers\ProcurementController;
+use App\Http\Controllers\ProcurementDocumentController;
 use App\Http\Controllers\ProcurementRouteController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
@@ -38,6 +39,14 @@ Route::middleware(['auth', 'role:user|admin'])->group(function () {
     '/procurement/{procurement}/retrieve',
         [ProcurementController::class, 'retrieve']
     )->name('procurement.retrieve');
+    Route::post(
+        '/procurement-routes/{route}/receive',
+        [ProcurementRouteController::class, 'receive']
+    )->name('procurement-routes.receive');
+    Route::post(
+        '/procurements/{procurement}/documents',
+        [ProcurementDocumentController::class, 'store']
+    )->name('procurements.documents.store');
 
     Route::put('/users/{user}/reset-password',[UserController::class, 'resetPassword'])->name('admin.users.reset-password');
     Route::get('/procurement/{procurement}/details',[ProcurementController::class, 'details'])->name('procurement.details');
