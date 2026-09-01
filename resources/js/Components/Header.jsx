@@ -9,7 +9,7 @@ import {
 export default function ProcurementDashboardHeader({
     title = "Procurement Tracking System",
     description = "Monitor and manage procurement requests from purchase request preparation through completion.",
-    badge = "7-Stage Workflow",
+    badge = null,
     stats = null,
     onCreate = null,
     createLabel = "Create New PR",

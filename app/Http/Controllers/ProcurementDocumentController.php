@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 use App\Models\Procurement;
 use App\Models\ProcurementDocument;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 class ProcurementDocumentController extends Controller
 {
     /**
@@ -103,5 +104,29 @@ class ProcurementDocumentController extends Controller
     public function destroy(ProcurementDocument $procurementDocument)
     {
         //
+    }
+    public function download(ProcurementDocument $document)
+    {
+        try {
+            if (!Storage::disk('public')->exists($document->file_path)) {
+                return back()->with(
+                    'error',
+                    'The requested document file does not exist.'
+                );
+            }
+
+            return Storage::disk('public')->download(
+                $document->file_path,
+                $document->original_name
+            );
+        } catch (\Throwable $e) {
+            \Log::error('Document download failed', [
+                'document_id' => $document->id,
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage(),
+            ]);
+
+            abort(404, 'Unable to download the document.');
+        }
     }
 }

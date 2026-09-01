@@ -66,7 +66,12 @@ export default function DocumentsTab({ currentPR }) {
     };
 
     const handleDownload = (doc) => {
-        window.open(route("procurements.documents.download", doc.id), "_blank");
+        window.open(
+            route("documents.download", {
+                document: doc.id,
+            }),
+            "_blank",
+        );
     };
 
     return (

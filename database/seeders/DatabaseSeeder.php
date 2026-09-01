@@ -22,8 +22,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             DepartmentSeeder::class,
             UserSeeder::class,
-            ProcurementSeeder::class,
-            ProcurementRouteSeeder::class,
+            // ProcurementSeeder::class,
+            // ProcurementRouteSeeder::class,
         ]);
 
         $user = User::factory()->create([
@@ -39,6 +39,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Administrator',
             'email' => 'admin@sdo.local',
             'password' => bcrypt('admin123'),
+            'role' => 'admin',
         ]);
         $admin->assignRole('admin');
 
