@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('stage');
 
             $table->string('document_type');
+            $table->string('required_label')->nullable();
 
             $table->string('original_name');
 
@@ -32,6 +33,7 @@ return new class extends Migration
             $table->string('mime_type')->nullable();
 
             $table->unsignedBigInteger('file_size')->nullable();
+
 
             $table->foreignId('uploaded_by')
                 ->nullable()

@@ -25,6 +25,7 @@ export default function ProcurementDrawerModal({
     onClose,
     initialData,
     currentRole,
+    onProcurementUpdated = () => {},
 }) {
     const [currentPR, setCurrentPR] = useState(() => normalizePR(initialData));
     const [activeDrawerTab, setActiveDrawerTab] = useState("stage_form");
@@ -69,7 +70,11 @@ export default function ProcurementDrawerModal({
         setCurrentPR(normalized);
         setDefaultTargetDept(normalized?.current_department ?? "");
         setTargetDept(normalized?.current_department ?? "");
-    }, [initialData]);
+    }, [
+        initialData?.id,
+        initialData?.updated_at, // bump this server-side on every mutation
+        initialData?.documents?.length, // catches document uploads specifically
+    ]);
 
     // ---------------------------------------------------------
     // STAGE DATA CHANGE
@@ -419,6 +424,7 @@ export default function ProcurementDrawerModal({
                             canEdit={canEditStageForm}
                             canUpload={canUploadDocuments}
                             canAccessCurrentStage={canAccessCurrentStage}
+                            onDocumentsChanged={onProcurementUpdated}
                         />
                     )}
                     {/* ROUTING HISTORY */}
@@ -431,6 +437,7 @@ export default function ProcurementDrawerModal({
                             currentPR={currentPR}
                             canUpload={canUploadDocuments}
                             canAccessCurrentStage={canAccessCurrentStage}
+                            onDocumentsChanged={onProcurementUpdated}
                         />
                     )}
                 </div>

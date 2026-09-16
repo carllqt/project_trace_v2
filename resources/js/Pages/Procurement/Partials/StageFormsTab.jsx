@@ -25,11 +25,10 @@ export default function StageFormsTab({
     handleStageDataChange,
     stageFiles,
     setStageFiles,
-
-    // Permissions from ProcurementDrawerModal
     canEdit = false,
     canUpload = false,
     canAccessCurrentStage = false,
+    onDocumentsChanged = () => {}, // add this
 }) {
     if (!currentPR) {
         return null;
@@ -215,10 +214,12 @@ export default function StageFormsTab({
                     <StageFormCard
                         key={stage.id}
                         stage={stage}
+                        currentPR={currentPR} // add this
                         isCurrentStage={isCurrentStage}
                         isPassedStage={isPassedStage}
                         canEditStage={canEditThisStage}
                         canUploadDocuments={canUploadThisStage}
+                        onDocumentsChanged={onDocumentsChanged} // add this
                         files={stageFiles?.[stage.id] ?? []}
                         onFilesChange={(files) =>
                             handleFilesChange(stage.id, files)

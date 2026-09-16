@@ -42,6 +42,17 @@ export default function ProcurementRegistry({
             setIsLoadingProcurement(false);
         }
     };
+    const refreshSelectedProcurement = async () => {
+        if (!selectedProcurement?.id) return;
+        try {
+            const response = await axios.get(
+                route("procurement.show", selectedProcurement.id),
+            );
+            setSelectedProcurement(response.data);
+        } catch (error) {
+            console.error("Failed to refresh procurement:", error);
+        }
+    };
     const handleClose = () => {
         setSelectedProcurement(null);
     };
@@ -262,14 +273,15 @@ export default function ProcurementRegistry({
                 />
             </div>
             <ProcurementDrawerModal
-                isOpen={selectedProcurement}
-                onClose={() => handleClose(false)}
+                isOpen={isProcurementModalOpen}
+                onClose={handleClose}
                 currentRole={{
                     deptId: user.department_id,
                     dept: user.department?.name,
                     name: user.name,
                 }}
                 initialData={selectedProcurement}
+                onProcurementUpdated={refreshSelectedProcurement}
             />
         </div>
     );

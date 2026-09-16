@@ -24,59 +24,64 @@ class ProcurementDocumentController extends Controller
      * Store a newly created resource in storage.
      */
     public function store(Request $request, Procurement $procurement)
-    {
-        try {
-            $request->validate([
-                'stage' => ['required', 'string'],
+        {
+            try {
+                $request->validate([
+                    'stage' => ['required', 'string'],
 
-                'documents' => ['required', 'array', 'min:1'],
+                    'documents' => ['required', 'array', 'min:1'],
 
-                'documents.*' => [
-                    'required',
-                    'file',
-                    'mimes:pdf,doc,docx,xls,xlsx',
-                    'max:15360',
-                ],
-            ]);
+                    'documents.*' => [
+                        'required',
+                        'file',
+                        'mimes:pdf,doc,docx,xls,xlsx',
+                        'max:15360',
+                    ],
 
-            foreach ($request->file('documents', []) as $file) {
-                $storedName = $file->hashName();
-
-                $path = $file->storeAs(
-                    "procurements/{$procurement->id}/documents",
-                    $storedName,
-                    'public'
-                );
-
-                $procurement->documents()->create([
-                    'stage' => $request->stage,
-                    'document_type' => $file->getClientOriginalExtension(),
-                    'original_name' => $file->getClientOriginalName(),
-                    'stored_name' => $storedName,
-                    'file_path' => $path,
-                    'mime_type' => $file->getClientMimeType(),
-                    'file_size' => $file->getSize(),
-                    'uploaded_by' => auth()->id(),
+                    // Which checklist item this upload satisfies, e.g. "Purchase Request".
+                    // Optional so the generic/legacy upload path (if any) still works.
+                    'required_label' => ['nullable', 'string', 'max:255'],
                 ]);
+
+                foreach ($request->file('documents', []) as $file) {
+                    $storedName = $file->hashName();
+
+                    $path = $file->storeAs(
+                        "procurements/{$procurement->id}/documents",
+                        $storedName,
+                        'public'
+                    );
+
+                    $procurement->documents()->create([
+                        'stage' => $request->stage,
+                        'document_type' => $file->getClientOriginalExtension(),
+                        'original_name' => $file->getClientOriginalName(),
+                        'stored_name' => $storedName,
+                        'file_path' => $path,
+                        'mime_type' => $file->getClientMimeType(),
+                        'file_size' => $file->getSize(),
+                        'uploaded_by' => auth()->id(),
+                        'required_label' => $request->input('required_label'),
+                    ]);
+                }
+
+                return back()->with(
+                    'success',
+                    'Document(s) uploaded successfully.'
+                );
+            } catch (\Throwable $e) {
+                \Log::error('Document upload failed', [
+                    'procurement_id' => $procurement->id,
+                    'user_id' => auth()->id(),
+                    'error' => $e->getMessage(),
+                ]);
+
+                return back()->with(
+                    'error',
+                    'Failed to upload document(s). Please try again.'
+                );
             }
-
-            return back()->with(
-                'success',
-                'Document(s) uploaded successfully.'
-            );
-        } catch (\Throwable $e) {
-            \Log::error('Document upload failed', [
-                'procurement_id' => $procurement->id,
-                'user_id' => auth()->id(),
-                'error' => $e->getMessage(),
-            ]);
-
-            return back()->with(
-                'error',
-                'Failed to upload document(s). Please try again.'
-            );
         }
-    }
     /**
      * Display the specified resource.
      */

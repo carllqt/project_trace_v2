@@ -1,14 +1,19 @@
-import { Download, FileText, Loader2, UploadCloud } from "lucide-react";
+import { Download, FileText, Loader2, Trash2, UploadCloud } from "lucide-react";
 import { useState } from "react";
 import axios from "axios";
 import FileUploadField from "@/Components/FileUploadField";
 import { router } from "@inertiajs/react";
 import { toast } from "sonner";
+import RequiredDocumentsChecklist from "./RequiredDocumentsChecklist";
 
-export default function DocumentsTab({ currentPR }) {
+export default function DocumentsTab({
+    currentPR,
+    onDocumentsChanged = () => {},
+}) {
     const [files, setFiles] = useState([]);
     const [error, setError] = useState(null);
     const [uploading, setUploading] = useState(false);
+    const [deletingId, setDeletingId] = useState(null);
 
     if (!currentPR) return null;
 
@@ -43,16 +48,17 @@ export default function DocumentsTab({ currentPR }) {
             formData,
             {
                 forceFormData: true,
+                preserveScroll: true,
+                preserveState: true,
 
                 onSuccess: () => {
                     toast.success("Document(s) uploaded successfully.");
-
                     setFiles([]);
+                    onDocumentsChanged?.();
                 },
 
                 onError: (errors) => {
                     console.error(errors);
-
                     toast.error(
                         errors.documents ?? "Failed to upload document(s).",
                     );
@@ -74,8 +80,41 @@ export default function DocumentsTab({ currentPR }) {
         );
     };
 
+    const handleDelete = async (doc) => {
+        if (deletingId) return;
+
+        const confirmed = window.confirm(
+            `Delete "${doc.name}"? This action cannot be undone.`,
+        );
+        if (!confirmed) return;
+
+        setDeletingId(doc.id);
+
+        try {
+            await axios.delete(
+                route("documents.destroy", { document: doc.id }),
+            );
+
+            toast.success(`"${doc.name}" was deleted.`);
+            onDocumentsChanged?.();
+        } catch (err) {
+            console.error(err);
+            toast.error(
+                err?.response?.data?.message ?? "Failed to delete document.",
+            );
+        } finally {
+            setDeletingId(null);
+        }
+    };
+
     return (
         <div className="space-y-4">
+            {/* Required Documents Checklist */}
+            <RequiredDocumentsChecklist
+                currentPR={currentPR}
+                onDocumentsChanged={onDocumentsChanged}
+            />
+
             {/* Header */}
             <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
@@ -91,38 +130,59 @@ export default function DocumentsTab({ currentPR }) {
             {/* Documents */}
             {documents.length > 0 ? (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {documents.map((doc) => (
-                        <div
-                            key={doc.id}
-                            className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition-colors hover:border-blue-300"
-                        >
-                            <div className="flex min-w-0 items-center gap-3">
-                                <div className="rounded-xl bg-blue-50 p-2.5 text-blue-600">
-                                    <FileText className="h-5 w-5" />
+                    {documents.map((doc) => {
+                        const isDeleting = deletingId === doc.id;
+
+                        return (
+                            <div
+                                key={doc.id}
+                                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition-colors hover:border-blue-300"
+                            >
+                                <div className="flex min-w-0 items-center gap-3">
+                                    <div className="rounded-xl bg-blue-50 p-2.5 text-blue-600">
+                                        <FileText className="h-5 w-5" />
+                                    </div>
+
+                                    <div className="min-w-0">
+                                        <p className="truncate text-xs font-bold text-slate-800">
+                                            {doc.name}
+                                        </p>
+
+                                        <p className="text-[10px] text-slate-400">
+                                            Stage {doc.stage} • {doc.type} •{" "}
+                                            {doc.size}
+                                        </p>
+                                    </div>
                                 </div>
 
-                                <div className="min-w-0">
-                                    <p className="truncate text-xs font-bold text-slate-800">
-                                        {doc.name}
-                                    </p>
+                                <div className="flex shrink-0 items-center gap-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleDownload(doc)}
+                                        disabled={isDeleting}
+                                        className="rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-50 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+                                        title={`Download ${doc.name}`}
+                                    >
+                                        <Download className="h-4 w-4" />
+                                    </button>
 
-                                    <p className="text-[10px] text-slate-400">
-                                        Stage {doc.stage} • {doc.type} •{" "}
-                                        {doc.size}
-                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleDelete(doc)}
+                                        disabled={isDeleting}
+                                        className="rounded-xl p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                                        title={`Delete ${doc.name}`}
+                                    >
+                                        {isDeleting ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <Trash2 className="h-4 w-4" />
+                                        )}
+                                    </button>
                                 </div>
                             </div>
-
-                            <button
-                                type="button"
-                                onClick={() => handleDownload(doc)}
-                                className="rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-50 hover:text-blue-600"
-                                title={`Download ${doc.name}`}
-                            >
-                                <Download className="h-4 w-4" />
-                            </button>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             ) : (
                 <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
