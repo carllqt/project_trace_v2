@@ -42,12 +42,15 @@ export default function ProcurementRegistry({
             setIsLoadingProcurement(false);
         }
     };
+
     const refreshSelectedProcurement = async () => {
+        console.log("[1] refreshSelectedProcurement called");
         if (!selectedProcurement?.id) return;
         try {
             const response = await axios.get(
                 route("procurement.show", selectedProcurement.id),
             );
+            console.log("refreshed data:", response.data);
             setSelectedProcurement(response.data);
         } catch (error) {
             console.error("Failed to refresh procurement:", error);

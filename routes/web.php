@@ -47,6 +47,10 @@ Route::middleware(['auth', 'role:user|admin'])->group(function () {
         '/procurements/{procurement}/documents',
         [ProcurementDocumentController::class, 'store']
     )->name('procurements.documents.store');
+    Route::delete(
+        '/procurement/document/{document}',
+        [ProcurementDocumentController::class, 'destroy']
+    )->name('procurement.document.destroy');
     Route::get('/documents/{document}/download',[ProcurementDocumentController::class, 'download'])->name('documents.download');
 
     Route::put('/users/{user}/reset-password',[UserController::class, 'resetPassword'])->name('admin.users.reset-password');

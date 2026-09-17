@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { router } from "@inertiajs/react";
 import { toast } from "sonner";
 import { PROCUREMENT_STAGES } from "@/constants";
+import { refreshResource } from "@/utils/refreshResource";
 
 export default function RequiredDocumentsChecklist({
     currentPR,
@@ -80,9 +81,29 @@ export default function RequiredDocumentsChecklist({
                 preserveScroll: true,
                 preserveState: true,
 
-                onSuccess: () => {
+                onSuccess: async () => {
                     toast.success(`"${label}" uploaded.`);
-                    onDocumentsChanged?.();
+
+                    await refreshResource({
+                        routeName: "procurement.show",
+                        id: currentPR.id,
+                        label: "RequiredDocumentsChecklist",
+
+                        onSuccess: (freshPR) => {
+                            console.log(
+                                "[refreshResource] Fresh procurement received:",
+                                freshPR,
+                            );
+
+                            onDocumentsChanged?.(freshPR);
+                        },
+
+                        onError: () => {
+                            toast.error(
+                                "File uploaded, but the updated document list could not be loaded.",
+                            );
+                        },
+                    });
                 },
 
                 onError: (errors) => {

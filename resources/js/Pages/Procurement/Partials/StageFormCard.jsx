@@ -2,6 +2,7 @@ import { CheckCircle2, Circle, Loader2, UploadCloud } from "lucide-react";
 import { useRef, useState } from "react";
 import { router } from "@inertiajs/react";
 import { toast } from "sonner";
+import { refreshResource } from "@/utils/refreshResource";
 
 export default function StageFormCard({
     stage,
@@ -70,9 +71,34 @@ export default function StageFormCard({
                 preserveScroll: true,
                 preserveState: true,
 
-                onSuccess: () => {
+                onSuccess: async () => {
                     toast.success(`"${label}" uploaded.`);
-                    onDocumentsChanged?.();
+
+                    await refreshResource({
+                        routeName: "procurement.show",
+                        id: currentPR.id,
+                        label: "StageFormCard",
+
+                        onSuccess: (freshPR) => {
+                            console.log(
+                                "[StageFormCard] Fresh procurement received:",
+                                freshPR,
+                            );
+
+                            onDocumentsChanged?.(freshPR);
+                        },
+
+                        onError: (error) => {
+                            console.error(
+                                "[StageFormCard] Failed to refresh procurement:",
+                                error,
+                            );
+
+                            toast.error(
+                                "File uploaded, but the updated document status could not be loaded.",
+                            );
+                        },
+                    });
                 },
 
                 onError: (errors) => {

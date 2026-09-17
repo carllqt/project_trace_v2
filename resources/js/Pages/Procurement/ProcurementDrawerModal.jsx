@@ -66,15 +66,28 @@ export default function ProcurementDrawerModal({
             setCurrentPR(null);
             return;
         }
+
         const normalized = normalizePR(initialData);
+
         setCurrentPR(normalized);
         setDefaultTargetDept(normalized?.current_department ?? "");
         setTargetDept(normalized?.current_department ?? "");
     }, [
         initialData?.id,
-        initialData?.updated_at, // bump this server-side on every mutation
-        initialData?.documents?.length, // catches document uploads specifically
+        initialData?.updated_at,
+        initialData?.documents?.length,
     ]);
+
+    const handleDocumentsChanged = (freshPR) => {
+        if (!freshPR) return;
+
+        const normalized = normalizePR(freshPR);
+
+        setCurrentPR(normalized);
+
+        // Keep the parent in sync as well.
+        onProcurementUpdated?.(normalized);
+    };
 
     // ---------------------------------------------------------
     // STAGE DATA CHANGE
@@ -424,7 +437,7 @@ export default function ProcurementDrawerModal({
                             canEdit={canEditStageForm}
                             canUpload={canUploadDocuments}
                             canAccessCurrentStage={canAccessCurrentStage}
-                            onDocumentsChanged={onProcurementUpdated}
+                            onDocumentsChanged={handleDocumentsChanged}
                         />
                     )}
                     {/* ROUTING HISTORY */}
@@ -437,7 +450,7 @@ export default function ProcurementDrawerModal({
                             currentPR={currentPR}
                             canUpload={canUploadDocuments}
                             canAccessCurrentStage={canAccessCurrentStage}
-                            onDocumentsChanged={onProcurementUpdated}
+                            onDocumentsChanged={handleDocumentsChanged}
                         />
                     )}
                 </div>

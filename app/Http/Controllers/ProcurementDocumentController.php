@@ -106,9 +106,29 @@ class ProcurementDocumentController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(ProcurementDocument $procurementDocument)
+    public function destroy(ProcurementDocument $document)
     {
-        //
+        try {
+            if ($document->file_path && Storage::disk('public')->exists($document->file_path)) {
+                Storage::disk('public')->delete($document->file_path);
+            }
+
+            $document->delete();
+
+            return response()->json([
+                'message' => 'Document deleted successfully.',
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Document deletion failed', [
+                'document_id' => $document->id,
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to delete document. Please try again.',
+            ], 500);
+        }
     }
     public function download(ProcurementDocument $document)
     {

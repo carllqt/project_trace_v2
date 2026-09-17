@@ -5,6 +5,7 @@ import FileUploadField from "@/Components/FileUploadField";
 import { router } from "@inertiajs/react";
 import { toast } from "sonner";
 import RequiredDocumentsChecklist from "./RequiredDocumentsChecklist";
+import { refreshResource } from "@/utils/refreshResource";
 
 export default function DocumentsTab({
     currentPR,
@@ -18,6 +19,44 @@ export default function DocumentsTab({
     if (!currentPR) return null;
 
     const documents = currentPR.documents ?? [];
+
+    /**
+     * Refresh the procurement resource after any document change.
+     *
+     * The fresh procurement is passed back to the parent so the
+     * parent can replace its currentPR state.
+     */
+    const refreshDocuments = async () => {
+        return await refreshResource({
+            routeName: "procurement.show",
+            id: currentPR.id,
+            label: "DocumentsTab",
+
+            onSuccess: (freshPR) => {
+                console.log(
+                    "[DocumentsTab] Fresh procurement received:",
+                    freshPR,
+                );
+
+                onDocumentsChanged?.(freshPR);
+            },
+
+            onError: (error) => {
+                console.error(
+                    "[DocumentsTab] Failed to refresh procurement:",
+                    error,
+                );
+            },
+        });
+    };
+
+    const handleDocumentsChanged = (freshPR) => {
+        if (freshPR) {
+            onDocumentsChanged?.(freshPR);
+        } else {
+            refreshDocuments();
+        }
+    };
 
     const handleFilesChange = (selectedFiles) => {
         setError(null);
@@ -51,14 +90,18 @@ export default function DocumentsTab({
                 preserveScroll: true,
                 preserveState: true,
 
-                onSuccess: () => {
+                onSuccess: async () => {
                     toast.success("Document(s) uploaded successfully.");
+
                     setFiles([]);
-                    onDocumentsChanged?.();
+                    setError(null);
+
+                    await refreshDocuments();
                 },
 
                 onError: (errors) => {
                     console.error(errors);
+
                     toast.error(
                         errors.documents ?? "Failed to upload document(s).",
                     );
@@ -86,19 +129,27 @@ export default function DocumentsTab({
         const confirmed = window.confirm(
             `Delete "${doc.name}"? This action cannot be undone.`,
         );
+
         if (!confirmed) return;
 
         setDeletingId(doc.id);
 
         try {
-            await axios.delete(
-                route("documents.destroy", { document: doc.id }),
+            const response = await axios.delete(
+                route("procurement.document.destroy", {
+                    document: doc.id,
+                }),
             );
 
-            toast.success(`"${doc.name}" was deleted.`);
-            onDocumentsChanged?.();
+            toast.success(
+                response?.data?.message ?? "Document deleted successfully.",
+            );
+
+            // Refresh documents after successful deletion
+            await refreshDocuments();
         } catch (err) {
             console.error(err);
+
             toast.error(
                 err?.response?.data?.message ?? "Failed to delete document.",
             );
@@ -112,7 +163,7 @@ export default function DocumentsTab({
             {/* Required Documents Checklist */}
             <RequiredDocumentsChecklist
                 currentPR={currentPR}
-                onDocumentsChanged={onDocumentsChanged}
+                onDocumentsChanged={handleDocumentsChanged}
             />
 
             {/* Header */}
