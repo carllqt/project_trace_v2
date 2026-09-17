@@ -1,10 +1,8 @@
-import { Head, router, useForm, usePage } from "@inertiajs/react";
+import { router, useForm, usePage } from "@inertiajs/react";
 import { AlertTriangle, CalendarPlus, CircleCheckBig, CircleX, ClipboardList, Download, FileSpreadsheet, LockKeyhole, Pencil, Plus, Save, Trash2, Upload, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
-import BreadCrumbsHeader from "@/Components/BreadcrumbsHeader";
-import MainLayout from "@/Layouts/MainLayout";
 import InputField from "@/Components/InputField";
 import InputError from "@/Components/InputError";
 import Pagination from "@/Components/Pagination";
@@ -31,7 +29,7 @@ const capaToast = {
     }),
 };
 
-export default function Management({ activities, embedded = false }) {
+export default function Management({ activities }) {
     const { flash = {} } = usePage().props;
     const form = useForm(emptyForm);
     const importForm = useForm({ rows: [] });
@@ -154,9 +152,9 @@ export default function Management({ activities, embedded = false }) {
         } catch (error) { capaToast.error(error.message || "Unable to read the spreadsheet."); }
     };
 
-    const content = (
-            <div className={embedded ? "" : "min-h-[calc(100vh-65px)] p-5 md:p-8"}>
-                <div className={embedded ? "" : "mx-auto max-w-7xl"}>
+    return (
+            <section className="min-w-0 w-full">
+                <div className="min-w-0 w-full">
                     <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
                         <div><h1 className="flex items-center gap-2 text-xl font-extrabold tracking-tight text-slate-900"><ClipboardList className="size-5 text-blue-700" /> CAPA Management</h1><p className="mt-1 text-xs text-slate-500">Add activities manually or import an Excel file.</p></div>
                         <div className="flex flex-wrap gap-2">
@@ -298,16 +296,7 @@ export default function Management({ activities, embedded = false }) {
                     </div>
                     <p className="mt-3 text-xs text-slate-500">Excel columns: CAPA Date From, CAPA Date To, Activity, Participants, Lead Division, Venue, Remarks. Activity and at least one CAPA date are required.</p>
                 </div>
-            </div>
-    );
-
-    if (embedded) return content;
-
-    return (
-        <MainLayout toasterProps={{ position: "top-right", closeButton: true, duration: 3500 }}>
-            <Head title="CAPA Management" />
-            <BreadCrumbsHeader breadcrumbs={[{ label: "CAPA Management", showOnMobile: true }]} />
-            {content}
-        </MainLayout>
+            </section>
     );
 }
+

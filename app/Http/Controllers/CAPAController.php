@@ -22,7 +22,7 @@ class CAPAController extends Controller
 
         $monthStart = CarbonImmutable::createFromFormat('Y-m-d', $calendarMonth.'-01')->startOfMonth();
 
-        return Inertia::render('CAPA/Calendar', [
+        return Inertia::render('CAPA/Index', [
             'activities' => $canManage
                 ? CAPA::query()->orderByRaw('COALESCE(date_from, date_to)')->paginate(5)->withQueryString()
                 : null,

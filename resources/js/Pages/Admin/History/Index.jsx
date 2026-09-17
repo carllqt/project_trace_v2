@@ -387,7 +387,7 @@ export default function Index({ routes, departments = [], queryParams = {} }) {
                     Registry
                 ====================================================== */}
 
-                <div className="overflow-hidden rounded-3xl border border-white/80 bg-white/70 shadow-[0_8px_30px_rgba(0,0,0,0.03)] backdrop-blur-xl">
+                <div className="mt-4 overflow-hidden rounded-3xl border border-white/80 bg-white/70 shadow-[0_8px_30px_rgba(0,0,0,0.03)] backdrop-blur-xl">
                     {/* Table Header */}
 
                     <div className="flex flex-col gap-3 border-b border-slate-100/80 bg-white/40 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
